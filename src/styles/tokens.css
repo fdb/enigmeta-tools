@@ -1,0 +1,89 @@
+/* Design tokens — OKLCH, hue/chroma as variables so shades vary lightness only. */
+
+:root {
+  color-scheme: light dark;
+
+  /* Single restrained accent hue (cool blue). */
+  --accent-h: 254;
+  --accent-c: 0.13;
+
+  /* Neutrals — grayscale, chroma 0. */
+  --bg: oklch(99% 0 0);
+  --surface: oklch(97% 0 0);
+  --surface-2: oklch(94% 0 0);
+  --border: oklch(87% 0 0);
+  --muted: oklch(48% 0 0);
+  --text: oklch(24% 0 0);
+  --heading: oklch(14% 0 0);
+
+  /* Accent — derive states by varying lightness. */
+  --accent: oklch(52% var(--accent-c) var(--accent-h));
+  --accent-strong: oklch(44% var(--accent-c) var(--accent-h));
+  --accent-fg: oklch(99% 0 0);
+  --focus: oklch(62% var(--accent-c) var(--accent-h));
+
+  /* Status. */
+  --danger: oklch(55% 0.17 27);
+
+  /* Type. */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas,
+    monospace;
+
+  /* Fluid type scale (1.25 ratio, clamped). */
+  --step--1: clamp(0.78rem, 0.76rem + 0.1vw, 0.84rem);
+  --step-0: clamp(0.95rem, 0.92rem + 0.16vw, 1.05rem);
+  --step-1: clamp(1.19rem, 1.11rem + 0.39vw, 1.45rem);
+  --step-2: clamp(1.48rem, 1.34rem + 0.71vw, 2rem);
+  --step-3: clamp(1.86rem, 1.62rem + 1.2vw, 2.75rem);
+
+  /* Spacing scale (×1.5). */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.5rem;
+  --s-6: 2.25rem;
+  --s-7: 3.5rem;
+
+  --measure: 66ch;
+  --maxw: 64rem;
+  --ease: 0.15s ease;
+}
+
+/* Dark — applied by system preference unless explicitly forced to light. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: oklch(16% 0 0);
+    --surface: oklch(20% 0 0);
+    --surface-2: oklch(25% 0 0);
+    --border: oklch(34% 0 0);
+    --muted: oklch(66% 0 0);
+    --text: oklch(90% 0 0);
+    --heading: oklch(97% 0 0);
+
+    --accent: oklch(70% var(--accent-c) var(--accent-h));
+    --accent-strong: oklch(78% var(--accent-c) var(--accent-h));
+    --accent-fg: oklch(16% 0 0);
+    --focus: oklch(72% var(--accent-c) var(--accent-h));
+    --danger: oklch(68% 0.17 27);
+  }
+}
+
+/* Explicit dark override. */
+:root[data-theme="dark"] {
+  --bg: oklch(16% 0 0);
+  --surface: oklch(20% 0 0);
+  --surface-2: oklch(25% 0 0);
+  --border: oklch(34% 0 0);
+  --muted: oklch(66% 0 0);
+  --text: oklch(90% 0 0);
+  --heading: oklch(97% 0 0);
+
+  --accent: oklch(70% var(--accent-c) var(--accent-h));
+  --accent-strong: oklch(78% var(--accent-c) var(--accent-h));
+  --accent-fg: oklch(16% 0 0);
+  --focus: oklch(72% var(--accent-c) var(--accent-h));
+  --danger: oklch(68% 0.17 27);
+}

@@ -1,0 +1,218 @@
+/* Shared app chrome: header, footer, cards, dropzone, asset gallery. */
+
+.site-header {
+  border-bottom: 1px solid var(--border);
+}
+.site-header .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding-block: var(--s-3);
+}
+.brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  color: var(--heading);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.brand:hover {
+  color: var(--heading);
+  text-decoration: none;
+}
+.brand .dot {
+  color: var(--accent);
+}
+.brand .crumb {
+  color: var(--muted);
+  font-weight: 450;
+}
+
+.theme-toggle {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    background var(--ease),
+    border-color var(--ease);
+}
+.theme-toggle:hover {
+  border-color: var(--muted);
+  background: var(--surface-2);
+}
+
+.site-main {
+  padding-block: var(--s-6) var(--s-7);
+}
+
+.hero {
+  border-bottom: 1px solid var(--border);
+  padding-block: var(--s-6);
+}
+.hero p {
+  color: var(--muted);
+  font-size: var(--step-1);
+}
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: var(--step--1);
+}
+.site-footer .wrap {
+  padding-block: var(--s-5);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  justify-content: space-between;
+}
+
+/* Tool cards on the landing page. */
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  transition:
+    border-color var(--ease),
+    background var(--ease),
+    transform var(--ease);
+}
+.tool-card:hover {
+  border-color: var(--accent);
+  background: var(--surface-2);
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+.tool-card h3 {
+  color: var(--heading);
+}
+.tool-card .tag {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 0.1em 0.5em;
+}
+.tool-card[aria-disabled="true"] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Dropzone. */
+.dropzone {
+  display: grid;
+  place-items: center;
+  gap: var(--s-3);
+  text-align: center;
+  padding: var(--s-7) var(--s-4);
+  border: 2px dashed var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    border-color var(--ease),
+    background var(--ease),
+    color var(--ease);
+}
+.dropzone:hover {
+  border-color: var(--muted);
+}
+.dropzone.dragover {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--surface-2);
+  color: var(--text);
+}
+.dropzone strong {
+  color: var(--heading);
+  font-size: var(--step-1);
+}
+
+/* Status line. */
+.status {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--muted);
+}
+.status[data-kind="error"] {
+  color: var(--danger);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  justify-content: space-between;
+  border-block: 1px solid var(--border);
+  padding-block: var(--s-3);
+}
+.toolbar .summary {
+  font-size: var(--step--1);
+}
+.toolbar .actions {
+  display: flex;
+  gap: var(--s-2);
+}
+
+/* Asset gallery. */
+.asset {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.asset .thumb {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  background:
+    repeating-conic-gradient(var(--surface-2) 0 25%, transparent 0 50%) 50% / 16px
+    16px;
+  overflow: hidden;
+}
+.asset .thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.asset .thumb.font {
+  font-size: clamp(2rem, 8vw, 3.5rem);
+  color: var(--heading);
+  line-height: 1;
+  padding: var(--s-3);
+  background: var(--surface);
+  text-align: center;
+  word-break: break-word;
+}
+.asset .meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding: var(--s-3);
+  border-top: 1px solid var(--border);
+}
+.asset .meta .name {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--heading);
+  word-break: break-all;
+}
+.asset .meta .detail {
+  font-size: var(--step--1);
+  color: var(--muted);
+}
+.asset .meta .btn {
+  margin-top: var(--s-2);
+}
