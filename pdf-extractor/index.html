@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PDF asset extractor · enigmeta tools</title>
+    <meta name="description" content="Drop a PDF and pull out every embedded image and font. Runs in your browser." />
+    <link rel="stylesheet" href="/src/styles/tokens.css" />
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/site.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="/">
+          tools<span class="dot">.</span>enigmeta<span class="dot">.</span>com
+          <span class="crumb">/ pdf-extractor</span>
+        </a>
+        <button
+          class="theme-toggle"
+          data-theme-toggle
+          type="button"
+          aria-label="Toggle dark mode"
+          title="Toggle dark mode"
+        >
+          ◐
+        </button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="wrap stack">
+        <h1>PDF asset extractor</h1>
+        <p>
+          Drop a PDF to pull out embedded images and fonts. Parsing happens locally in WebAssembly, so the file never
+          leaves your browser.
+        </p>
+      </div>
+    </section>
+
+    <main class="site-main">
+      <div class="wrap stack-lg">
+        <label class="dropzone" id="dropzone">
+          <strong>Drop a PDF here</strong>
+          <span>or click to choose a file</span>
+          <input type="file" id="file" accept="application/pdf,.pdf" class="visually-hidden" />
+        </label>
+
+        <p class="status" id="status" data-kind="idle">Waiting for a PDF.</p>
+
+        <div class="toolbar" id="toolbar" hidden>
+          <span class="summary mono" id="summary"></span>
+          <div class="actions">
+            <button class="btn btn-primary" id="download-all" type="button">Download all as ZIP</button>
+          </div>
+        </div>
+
+        <div class="grid" id="gallery"></div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <span>All processing happens in your browser. Nothing is uploaded.</span>
+        <span><a href="/">← all tools</a></span>
+      </div>
+    </footer>
+
+    <script type="module" src="/pdf-extractor/main.ts"></script>
+  </body>
+</html>
