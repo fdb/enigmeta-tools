@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="enigmeta tools">
+  <rect width="32" height="32" fill="#2b6ab1" />
+  <!-- two offset tiles: layered assets, sharp corners, monochrome on accent -->
+  <rect x="4" y="14" width="14" height="14" fill="#ffffff" />
+  <rect x="12" y="2" width="16" height="18" fill="#2b6ab1" />
+  <rect x="14" y="4" width="14" height="14" fill="#ffffff" />
+</svg>
