@@ -1,0 +1,23 @@
+{
+  "name": "enigmeta-tools",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "wasm": "wasm-pack build crates/pdf-extract --target web --out-dir ../../src/wasm/pdf-extract --out-name pdf_extract --release --no-pack",
+    "dev": "npm run wasm && vite",
+    "build": "npm run wasm && tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.20",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7"
+  },
+  "dependencies": {
+    "fflate": "^0.8.2"
+  }
+}

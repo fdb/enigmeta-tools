@@ -1,0 +1,8 @@
+node_modules/
+dist/
+src/wasm/
+crates/**/target/
+*.log
+.DS_Store
+.wrangler/
+scripts/test.pdf
