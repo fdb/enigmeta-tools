@@ -12,6 +12,8 @@ use std::io::Read;
 use lopdf::{Dictionary, Document, Object, ObjectId, Stream};
 use wasm_bindgen::prelude::*;
 
+pub mod cff;
+
 #[wasm_bindgen]
 #[derive(Clone)]
 pub struct Asset {
@@ -745,12 +747,17 @@ fn extract_font(doc: &Document, fr: &FontRef, n: usize) -> Option<Asset> {
         Ok(Object::Stream(s)) => s,
         _ => return None,
     };
-    let bytes = stream
+    let mut bytes = stream
         .decompressed_content()
         .unwrap_or_else(|_| stream.content.clone());
 
     let (ext, mime, kind_note) = match fr.key {
         "FontFile" => ("pfb", "application/x-font-type1", "Type 1".to_string()),
+        // Usually TrueType, but some producers put an OpenType (OTTO/CFF) sfnt
+        // in FontFile2 — name it by its actual signature.
+        "FontFile2" if bytes.starts_with(b"OTTO") => {
+            ("otf", "font/otf", "OpenType".to_string())
+        }
         "FontFile2" => ("ttf", "font/ttf", "TrueType".to_string()),
         _ => {
             let sub = stream
@@ -765,7 +772,15 @@ fn extract_font(doc: &Document, fr: &FontRef, n: usize) -> Option<Asset> {
             if sub == "OpenType" {
                 ("otf", "font/otf", "OpenType".to_string())
             } else {
-                ("cff", "font/otf", if sub.is_empty() { "CFF".into() } else { sub })
+                // Bare CFF (Type1C / CIDFontType0C): wrap into an OpenType sfnt
+                // so it's a normal, installable font instead of a raw .cff.
+                match cff::cff_to_otf(&bytes) {
+                    Some(otf) => {
+                        bytes = otf;
+                        ("otf", "font/otf", "CFF → OpenType".to_string())
+                    }
+                    None => ("cff", "font/otf", if sub.is_empty() { "CFF".into() } else { sub }),
+                }
             }
         }
     };
