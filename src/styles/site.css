@@ -149,6 +149,11 @@
   color: var(--danger);
 }
 
+/* `.toolbar` sets display:flex, which would otherwise override the `hidden`
+   attribute's UA display:none. Re-assert it when hidden. */
+.toolbar[hidden] {
+  display: none;
+}
 .toolbar {
   display: flex;
   flex-wrap: wrap;
