@@ -601,6 +601,7 @@ fn build_png(
             encode_gray8(&g, w, h).map(|p| (p, "DeviceGray 1-bit".into()))
         }
         Cs::Rgb if bpc == 8 => encode_rgb8(samples, w, h).map(|p| (p, "DeviceRGB 8-bit".into())),
+        Cs::Cmyk if bpc == 8 => encode_cmyk8(samples, w, h).map(|p| (p, "DeviceCMYK → RGB".into())),
         Cs::Indexed { base, palette } if bpc == 8 => {
             let rgb = expand_indexed(samples, w, h, &base, &palette)?;
             encode_rgb8(&rgb, w, h).map(|p| (p, "Indexed → RGB".into()))
@@ -639,6 +640,22 @@ fn encode_rgb8(data: &[u8], w: u32, h: u32) -> Option<Vec<u8>> {
         wr.write_image_data(&data[..need]).ok()?;
     }
     Some(out)
+}
+
+/// Naive DeviceCMYK -> RGB (no ICC profile): r = (255-c)(255-k)/255, etc.
+fn encode_cmyk8(data: &[u8], w: u32, h: u32) -> Option<Vec<u8>> {
+    let n = (w as usize) * (h as usize);
+    if data.len() < n * 4 {
+        return None;
+    }
+    let mut rgb = Vec::with_capacity(n * 3);
+    for px in data[..n * 4].chunks_exact(4) {
+        let (c, m, y, k) = (px[0] as u32, px[1] as u32, px[2] as u32, px[3] as u32);
+        rgb.push(((255 - c) * (255 - k) / 255) as u8);
+        rgb.push(((255 - m) * (255 - k) / 255) as u8);
+        rgb.push(((255 - y) * (255 - k) / 255) as u8);
+    }
+    encode_rgb8(&rgb, w, h)
 }
 
 fn expand_1bit_gray(data: &[u8], w: u32, h: u32) -> Vec<u8> {
