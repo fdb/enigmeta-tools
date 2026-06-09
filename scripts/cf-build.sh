@@ -10,12 +10,15 @@ set -euo pipefail
 
 WASM_PACK_VERSION="0.13.1"
 
-# 1. Rust toolchain — install via rustup if the build image doesn't ship it.
-if ! command -v cargo >/dev/null 2>&1; then
-  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+# 1. Rust toolchain — manage with rustup so we get a current stable (our deps
+#    need >= 1.73), regardless of whatever the build image may preinstall.
+if ! command -v rustup >/dev/null 2>&1; then
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+    | sh -s -- -y --profile minimal --default-toolchain stable
 fi
 export PATH="$HOME/.cargo/bin:$PATH"
 
+rustup default stable
 rustup target add wasm32-unknown-unknown
 
 # 2. wasm-pack — download the prebuilt binary (no compile) if missing.
