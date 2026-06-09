@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>enigmeta tools</title>
+    <meta
+      name="description"
+      content="A small collection of privacy-respecting tools that run entirely in your browser."
+    />
+    <link rel="stylesheet" href="/src/styles/tokens.css" />
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/site.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="/">
+          tools<span class="dot">.</span>enigmeta<span class="dot">.</span>com
+        </a>
+        <button
+          class="theme-toggle"
+          data-theme-toggle
+          type="button"
+          aria-label="Toggle dark mode"
+          title="Toggle dark mode"
+        >
+          ◐
+        </button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="wrap stack">
+        <h1>Tools</h1>
+        <p>
+          A small collection of tools I use and maintain. Everything runs
+          entirely in your browser — your files never leave your machine. No
+          uploads, no servers, no tracking.
+        </p>
+      </div>
+    </section>
+
+    <main class="site-main">
+      <div class="wrap">
+        <div class="grid">
+          <a class="tool-card" href="/pdf-extractor/">
+            <span class="tag">PDF · Rust/WASM</span>
+            <h3>PDF asset extractor</h3>
+            <p class="muted small">
+              Drop a PDF to pull out every embedded image and font. Download
+              them individually or all at once as a ZIP.
+            </p>
+          </a>
+
+          <span class="tool-card" aria-disabled="true">
+            <span class="tag">soon</span>
+            <h3>More to come</h3>
+            <p class="muted small">Other small, browser-only utilities.</p>
+          </span>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <span>Runs locally in your browser. Nothing is uploaded.</span>
+        <span><a href="https://enigmeta.com">enigmeta.com</a></span>
+      </div>
+    </footer>
+
+    <script type="module" src="/src/home.ts"></script>
+  </body>
+</html>
