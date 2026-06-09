@@ -70,10 +70,15 @@ npm run typecheck   # tsc --noEmit
 
 ## Deployment
 
-Deployed to **GitHub Pages** via `.github/workflows/deploy.yml` on every push to
-`main`: the workflow installs Rust + wasm-pack + Node, runs `npm run build`, and
-publishes `dist/`. Served at the custom domain **tools.enigmeta.com** (`public/CNAME`),
-so the Vite `base` is `/`. The `.wasm` files are served as static assets (GitHub
-Pages sends the correct `application/wasm` MIME type).
+Deployed to **Cloudflare Pages** via the dashboard's Git integration (connected to
+`fdb/enigmeta-tools`, builds on push to `main`). Cloudflare runs the build itself:
 
-Custom domain DNS: a `CNAME` record `tools` → `fdb.github.io`.
+- **Build command:** `bash scripts/cf-build.sh` — installs the Rust + wasm-pack
+  toolchain in Cloudflare's build image (if not already present), then runs
+  `npm run build`.
+- **Build output directory:** `dist`
+- **Node version:** pinned by `.nvmrc` (20).
+
+Served at the custom domain **tools.enigmeta.com** (configured in the Cloudflare
+Pages dashboard → Custom domains), so the Vite `base` is `/`. Cloudflare serves
+`.wasm` with the correct `application/wasm` MIME type.
