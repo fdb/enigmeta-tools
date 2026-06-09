@@ -202,6 +202,7 @@
   gap: var(--s-1);
   padding: var(--s-3);
   border-top: 1px solid var(--border);
+  flex: 1; /* fill the card so the button can sink to the bottom */
 }
 .asset .meta .name {
   font-family: var(--font-mono);
@@ -214,5 +215,9 @@
   color: var(--muted);
 }
 .asset .meta .btn {
-  margin-top: var(--s-2);
+  /* push to the bottom so buttons align across cards regardless of how many
+     lines the name/detail wrap to; keeps a minimum gap above. */
+  margin-top: auto;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
 }
