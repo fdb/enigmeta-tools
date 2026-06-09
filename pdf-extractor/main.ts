@@ -4,11 +4,13 @@ import "../src/styles/site.css";
 import { initTheme } from "../src/theme";
 
 import { zipSync } from "fflate";
-import init, { extract } from "../src/wasm/pdf-extract/pdf_extract.js";
-// Vite resolves this to a served URL for the wasm binary.
-import wasmUrl from "../src/wasm/pdf-extract/pdf_extract_bg.wasm?url";
 
 initTheme();
+
+// Extraction runs in a worker so large PDFs don't freeze the UI.
+const worker = new Worker(new URL("./worker.ts", import.meta.url), {
+  type: "module",
+});
 
 // A plain JS copy of an extracted asset, detached from WASM memory.
 interface PlainAsset {
@@ -26,20 +28,34 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const dropzone = $<HTMLLabelElement>("dropzone");
 const fileInput = $<HTMLInputElement>("file");
 const statusEl = $<HTMLParagraphElement>("status");
+const progressEl = $<HTMLDivElement>("progress");
+const progressBar = $<HTMLDivElement>("progress-bar");
 const toolbar = $<HTMLDivElement>("toolbar");
 const summary = $<HTMLSpanElement>("summary");
 const gallery = $<HTMLDivElement>("gallery");
 const downloadAllBtn = $<HTMLButtonElement>("download-all");
 
-let wasmReady: Promise<unknown> | null = null;
-const ensureWasm = () => (wasmReady ??= init({ module_or_path: wasmUrl }));
-
 let current: PlainAsset[] = [];
 let objectUrls: string[] = [];
+let jobId = 0; // identifies the in-flight extraction; stale results are ignored
+let jobName = "";
 
 function setStatus(text: string, kind: "idle" | "busy" | "done" | "error") {
   statusEl.textContent = text;
   statusEl.dataset.kind = kind;
+}
+
+function showProgress(visible: boolean) {
+  progressEl.hidden = !visible;
+}
+
+function setIndeterminate(on: boolean) {
+  progressEl.classList.toggle("indeterminate", on);
+  if (on) progressBar.style.width = "";
+}
+
+function setProgress(pct: number) {
+  progressBar.style.width = `${pct}%`;
 }
 
 function revokeUrls() {
@@ -165,49 +181,69 @@ async function handleFile(file: File) {
   gallery.replaceChildren();
   toolbar.hidden = true;
 
+  const id = ++jobId;
+  jobName = file.name;
   setStatus(`Reading ${file.name}…`, "busy");
+  showProgress(true);
+  setIndeterminate(true);
+
   try {
-    await ensureWasm();
-    const buf = new Uint8Array(await file.arrayBuffer());
-    setStatus(`Extracting assets from ${file.name}…`, "busy");
-
-    const result = extract(buf);
-    try {
-      const count = result.count;
-      for (let i = 0; i < count; i++) {
-        const a = result.get(i);
-        if (!a) continue;
-        current.push({
-          kind: a.kind,
-          name: a.name,
-          mime: a.mime,
-          width: a.width,
-          height: a.height,
-          note: a.note,
-          bytes: a.bytes, // getter returns a fresh Uint8Array copy
-        });
-        a.free();
-      }
-    } finally {
-      result.free();
-    }
-
-    if (current.length === 0) {
-      setStatus("No embedded images or fonts found in this PDF.", "done");
-      return;
-    }
-
-    const images = current.filter((a) => a.kind === "image").length;
-    const fonts = current.filter((a) => a.kind === "font").length;
-    summary.textContent = `${current.length} assets · ${images} images · ${fonts} fonts`;
-    toolbar.hidden = false;
-    render(current);
-    setStatus(`Done. Extracted ${current.length} assets from ${file.name}.`, "done");
+    const buffer = await file.arrayBuffer();
+    // Transfer the bytes into the worker (zero-copy) and let it report back.
+    worker.postMessage({ type: "extract", jobId: id, buffer }, [buffer]);
   } catch (err) {
-    console.error(err);
+    showProgress(false);
     setStatus(err instanceof Error ? err.message : String(err), "error");
   }
 }
+
+interface WorkerMessage {
+  type: "progress" | "done" | "error";
+  jobId: number;
+  phase?: "parse" | "extract";
+  done?: number;
+  total?: number;
+  assets?: PlainAsset[];
+  message?: string;
+}
+
+worker.onmessage = (e: MessageEvent<WorkerMessage>) => {
+  const msg = e.data;
+  if (msg.jobId !== jobId) return; // a newer file superseded this result
+
+  if (msg.type === "progress") {
+    if (msg.phase === "parse") {
+      setStatus(`Parsing ${jobName}…`, "busy");
+      setIndeterminate(true);
+    } else {
+      const pct = msg.total ? Math.round((msg.done! / msg.total) * 100) : 0;
+      setIndeterminate(false);
+      setProgress(pct);
+      setStatus(`Extracting assets… ${pct}%`, "busy");
+    }
+    return;
+  }
+
+  if (msg.type === "error") {
+    showProgress(false);
+    setStatus(msg.message ?? "Extraction failed.", "error");
+    return;
+  }
+
+  // done
+  showProgress(false);
+  current = msg.assets ?? [];
+  if (current.length === 0) {
+    setStatus(`No embedded images or fonts found in ${jobName}.`, "done");
+    return;
+  }
+  const images = current.filter((a) => a.kind === "image").length;
+  const fonts = current.filter((a) => a.kind === "font").length;
+  summary.textContent = `${current.length} assets · ${images} images · ${fonts} fonts`;
+  toolbar.hidden = false;
+  render(current);
+  setStatus(`Done. Extracted ${current.length} assets from ${jobName}.`, "done");
+};
 
 function downloadAll() {
   if (current.length === 0) return;

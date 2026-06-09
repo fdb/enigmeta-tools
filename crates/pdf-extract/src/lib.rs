@@ -73,8 +73,14 @@ impl ExtractResult {
     }
 }
 
+/// Extract assets from `data`. `on_progress`, if given, is called with
+/// `(done, total)` object counts as extraction proceeds, so a worker can drive
+/// a progress bar without blocking on the synchronous parse.
 #[wasm_bindgen]
-pub fn extract(data: &[u8]) -> Result<ExtractResult, JsValue> {
+pub fn extract(
+    data: &[u8],
+    on_progress: Option<js_sys::Function>,
+) -> Result<ExtractResult, JsValue> {
     let doc = Document::load_mem(data)
         .map_err(|e| JsValue::from_str(&format!("Could not parse PDF: {e}")))?;
 
@@ -84,11 +90,20 @@ pub fn extract(data: &[u8]) -> Result<ExtractResult, JsValue> {
         ));
     }
 
+    let report = |done: usize, total: usize| {
+        if let Some(cb) = &on_progress {
+            let _ = cb.call2(&JsValue::NULL, &(done as f64).into(), &(total as f64).into());
+        }
+    };
+
+    let total = doc.objects.len().max(1);
+    let step = (total / 100).max(1); // throttle callbacks to ~100 updates
+
     let mut assets: Vec<Asset> = Vec::new();
 
     // Images: every stream object whose subtype is /Image.
     let mut img_n = 0usize;
-    for obj in doc.objects.values() {
+    for (idx, obj) in doc.objects.values().enumerate() {
         if let Object::Stream(stream) = obj {
             if is_image(&stream.dict) {
                 img_n += 1;
@@ -96,6 +111,9 @@ pub fn extract(data: &[u8]) -> Result<ExtractResult, JsValue> {
                     assets.push(a);
                 }
             }
+        }
+        if idx % step == 0 {
+            report(idx, total);
         }
     }
 
@@ -106,6 +124,7 @@ pub fn extract(data: &[u8]) -> Result<ExtractResult, JsValue> {
         }
     }
 
+    report(total, total);
     Ok(ExtractResult { assets })
 }
 
