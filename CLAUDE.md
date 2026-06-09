@@ -70,5 +70,10 @@ npm run typecheck   # tsc --noEmit
 
 ## Deployment
 
-Static `dist/` output; intended for Cloudflare Pages. Build command `npm run build`,
-output directory `dist/`. The WASM `.wasm` files are served as static assets.
+Deployed to **GitHub Pages** via `.github/workflows/deploy.yml` on every push to
+`main`: the workflow installs Rust + wasm-pack + Node, runs `npm run build`, and
+publishes `dist/`. Served at the custom domain **tools.enigmeta.com** (`public/CNAME`),
+so the Vite `base` is `/`. The `.wasm` files are served as static assets (GitHub
+Pages sends the correct `application/wasm` MIME type).
+
+Custom domain DNS: a `CNAME` record `tools` → `fdb.github.io`.
