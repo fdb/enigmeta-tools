@@ -235,9 +235,11 @@ fn extract_image(doc: &Document, stream: &Stream, n: usize) -> Option<Asset> {
         });
     }
 
-    // Lossless/raw samples: rebuild a PNG. `decompressed_content` applies the
-    // full filter chain including PNG predictors, which we need here.
-    let samples = stream.decompressed_content().ok()?;
+    // Lossless/raw samples: decode transport filters ourselves (NOT lopdf's
+    // decompressed_content, whose predictor handling corrupts some rows), then
+    // reverse the PNG/TIFF predictor with correct math, and rebuild a PNG.
+    let filtered = predecode(stream, &fs);
+    let samples = unpredict(doc, dict, filtered, w, bpc);
     if let Some((png, note)) = build_png(doc, dict, &samples, w, h, bpc) {
         return Some(Asset {
             kind: "image".into(),
@@ -470,6 +472,109 @@ fn lookup_bytes(doc: &Document, o: &Object) -> Vec<u8> {
             .decompressed_content()
             .unwrap_or_else(|_| s.content.clone()),
         _ => Vec::new(),
+    }
+}
+
+/// Read predictor settings from /DecodeParms (defaults per PDF spec).
+fn predictor_params(
+    doc: &Document,
+    dict: &Dictionary,
+    default_columns: u32,
+    img_bpc: u32,
+) -> (i64, usize, usize, usize) {
+    let dp = dict
+        .get(b"DecodeParms")
+        .or_else(|_| dict.get(b"DP"))
+        .ok()
+        .map(|o| resolve(doc, o));
+    let params: Option<&Dictionary> = match dp {
+        Some(Object::Dictionary(d)) => Some(d),
+        // With a filter array, DecodeParms is a parallel array; the predictor
+        // params live in whichever dict carries /Predictor.
+        Some(Object::Array(a)) => a.iter().map(|o| resolve(doc, o)).find_map(|o| match o {
+            Object::Dictionary(d) if d.get(b"Predictor").is_ok() => Some(d),
+            _ => None,
+        }),
+        _ => None,
+    };
+    let Some(pd) = params else {
+        return (1, 1, default_columns as usize, img_bpc as usize);
+    };
+    let get = |k: &[u8]| pd.get(k).ok().map(|o| resolve(doc, o)).and_then(as_int);
+    (
+        get(b"Predictor").unwrap_or(1),
+        get(b"Colors").unwrap_or(1) as usize,
+        get(b"Columns").unwrap_or(1) as usize,
+        get(b"BitsPerComponent").unwrap_or(img_bpc as i64) as usize,
+    )
+}
+
+/// Reverse a PNG (Predictor >= 10) or TIFF (Predictor == 2) predictor.
+fn unpredict(doc: &Document, dict: &Dictionary, data: Vec<u8>, w: u32, bpc: u32) -> Vec<u8> {
+    let (predictor, colors, columns, pbpc) = predictor_params(doc, dict, w, bpc);
+    if predictor < 2 {
+        return data; // 1 or absent: no prediction
+    }
+    let colors = colors.max(1);
+    let columns = columns.max(1);
+    let pbpc = pbpc.max(1);
+    let bpp = (colors * pbpc).div_ceil(8).max(1); // bytes between a pixel and its left neighbour
+    let row_len = (columns * colors * pbpc).div_ceil(8);
+    if row_len == 0 {
+        return data;
+    }
+
+    if predictor == 2 {
+        // TIFF predictor 2: horizontal differencing (byte-wise, 8-bit components).
+        let mut out = data;
+        let rows = out.len() / row_len;
+        for r in 0..rows {
+            let base = r * row_len;
+            for i in bpp..row_len {
+                out[base + i] = out[base + i].wrapping_add(out[base + i - bpp]);
+            }
+        }
+        return out;
+    }
+
+    // PNG predictors: each row is prefixed with a filter-type byte.
+    let stride = row_len + 1;
+    let rows = data.len() / stride;
+    let mut out = vec![0u8; rows * row_len];
+    for r in 0..rows {
+        let in_base = r * stride;
+        let filter = data[in_base];
+        let out_base = r * row_len;
+        let prev_base = out_base.wrapping_sub(row_len); // valid only when r > 0
+        for i in 0..row_len {
+            let x = data[in_base + 1 + i];
+            let a = if i >= bpp { out[out_base + i - bpp] } else { 0 };
+            let b = if r > 0 { out[prev_base + i] } else { 0 };
+            let c = if r > 0 && i >= bpp { out[prev_base + i - bpp] } else { 0 };
+            out[out_base + i] = match filter {
+                0 => x,
+                1 => x.wrapping_add(a),
+                2 => x.wrapping_add(b),
+                3 => x.wrapping_add(((a as u16 + b as u16) / 2) as u8),
+                4 => x.wrapping_add(paeth(a, b, c)),
+                _ => x,
+            };
+        }
+    }
+    out
+}
+
+fn paeth(a: u8, b: u8, c: u8) -> u8 {
+    let p = a as i32 + b as i32 - c as i32;
+    let pa = (p - a as i32).abs();
+    let pb = (p - b as i32).abs();
+    let pc = (p - c as i32).abs();
+    if pa <= pb && pa <= pc {
+        a
+    } else if pb <= pc {
+        b
+    } else {
+        c
     }
 }
 
