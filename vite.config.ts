@@ -14,6 +14,7 @@ export default defineConfig({
       input: {
         home: resolve(root, "index.html"),
         "pdf-extractor": resolve(root, "pdf-extractor/index.html"),
+        "key-converter": resolve(root, "key-converter/index.html"),
       },
     },
   },
