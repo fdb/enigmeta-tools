@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#2b6ab1" />
+    <title>Private key converter · enigmeta tools</title>
+    <meta
+      name="description"
+      content="Convert an OpenSSH private key to an unencrypted PKCS#8 or SEC1 PEM. Decryption and conversion happen entirely in your browser."
+    />
+    <link rel="stylesheet" href="/src/styles/tokens.css" />
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/site.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="/">
+          tools<span class="dot">.</span>enigmeta<span class="dot">.</span>com
+          <span class="crumb">/ key-converter</span>
+        </a>
+        <button
+          class="theme-toggle"
+          data-theme-toggle
+          type="button"
+          aria-label="Toggle dark mode"
+          title="Toggle dark mode"
+        >
+          ◐
+        </button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="wrap stack">
+        <h1>Private key converter</h1>
+        <p>
+          Turn an OpenSSH private key (like <code>id_ed25519</code>) into an unencrypted <strong>PKCS#8</strong> or
+          <strong>SEC1</strong> PEM — the formats most tools and libraries expect. Encrypted keys are decrypted here
+          too; just enter the passphrase.
+        </p>
+        <p class="privacy">
+          Everything runs in your browser. Your key and passphrase never leave this device — there is no server to send
+          them to.
+        </p>
+      </div>
+    </section>
+
+    <main class="site-main">
+      <div class="wrap">
+        <form class="kc stack-lg" id="form" autocomplete="off">
+          <div class="field">
+            <div class="field-head">
+              <label for="input">Private key</label>
+              <span class="file-load">
+                <input
+                  type="file"
+                  id="file"
+                  class="visually-hidden"
+                  accept=".pem,.key,.txt,text/plain,application/octet-stream"
+                />
+                <label for="file" class="btn file-btn">Load from file…</label>
+              </span>
+            </div>
+            <textarea
+              id="input"
+              class="mono"
+              rows="8"
+              spellcheck="false"
+              autocapitalize="off"
+              autocorrect="off"
+              placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;…&#10;-----END OPENSSH PRIVATE KEY-----"
+            ></textarea>
+          </div>
+
+          <div class="field">
+            <label for="passphrase">Passphrase <span class="muted small">(only if the key is encrypted)</span></label>
+            <div class="pass-row">
+              <input
+                type="password"
+                id="passphrase"
+                class="mono"
+                autocapitalize="off"
+                autocorrect="off"
+                autocomplete="off"
+                placeholder="Leave blank if the key has no passphrase"
+              />
+              <button type="button" class="btn" id="toggle-pass" aria-pressed="false">Show</button>
+            </div>
+          </div>
+
+          <fieldset class="field format">
+            <legend>Output format</legend>
+            <label class="radio">
+              <input type="radio" name="format" value="pkcs8" checked />
+              <span><strong>PKCS#8</strong> — Ed25519 or ECDSA</span>
+            </label>
+            <label class="radio">
+              <input type="radio" name="format" value="sec1" />
+              <span><strong>SEC1</strong> — ECDSA only</span>
+            </label>
+          </fieldset>
+
+          <div class="actions">
+            <button type="submit" class="btn btn-primary" id="convert">Convert</button>
+            <button type="button" class="btn" id="clear">Clear</button>
+          </div>
+        </form>
+
+        <p class="status" id="status" data-kind="idle" role="status" aria-live="polite">
+          Paste a private key and press Convert.
+        </p>
+
+        <section class="result" id="result" hidden>
+          <div class="result-head">
+            <span class="summary mono" id="summary"></span>
+            <div class="actions">
+              <button type="button" class="btn" id="copy">Copy</button>
+              <button type="button" class="btn btn-primary" id="download">Download</button>
+            </div>
+          </div>
+          <textarea id="output" class="mono" rows="10" readonly spellcheck="false"></textarea>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <span>All processing happens in your browser. Nothing is uploaded.</span>
+        <span><a href="/">← all tools</a></span>
+      </div>
+    </footer>
+
+    <script type="module" src="/key-converter/main.ts"></script>
+  </body>
+</html>
