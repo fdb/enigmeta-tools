@@ -15,6 +15,7 @@ export default defineConfig({
         home: resolve(root, "index.html"),
         "pdf-extractor": resolve(root, "pdf-extractor/index.html"),
         "key-converter": resolve(root, "key-converter/index.html"),
+        datamosh: resolve(root, "datamosh/index.html"),
       },
     },
   },

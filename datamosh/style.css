@@ -1,0 +1,178 @@
+/* Datamosher-specific styles. Follows the site's near-monochrome, no-radius,
+   bordered-surface aesthetic. */
+
+.privacy {
+  color: var(--muted);
+  font-size: var(--step--1);
+  border-left: 2px solid var(--accent);
+  padding-left: var(--s-3);
+}
+
+/* Input-source tabs. */
+.tabs {
+  display: flex;
+  gap: var(--s-2);
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  padding: 0.6em 1.2em;
+  font-size: var(--step-0);
+  font-weight: 550;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    background var(--ease),
+    color var(--ease),
+    border-color var(--ease);
+}
+.tab:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+.tab[aria-selected="true"] {
+  color: var(--heading);
+  background: var(--surface-2);
+  border-color: var(--accent);
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+.panel[hidden] {
+  display: none;
+}
+
+/* Parameter fieldset & sliders. */
+.params {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  margin: 0;
+}
+.params legend {
+  color: var(--heading);
+  font-weight: 600;
+  padding-inline: var(--s-2);
+}
+.param {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.param > label {
+  font-size: var(--step--1);
+  color: var(--text);
+}
+.param output {
+  color: var(--heading);
+  font-weight: 600;
+}
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.check {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  font-size: var(--step--1);
+  cursor: pointer;
+}
+.check input {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--accent);
+  flex: 0 0 auto;
+  translate: 0 2px;
+}
+.check strong {
+  color: var(--heading);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+}
+.actions .btn {
+  padding: 0.65em 1.2em;
+}
+.export-note {
+  max-width: var(--measure);
+}
+
+/* Webcam performance buttons. */
+.cam-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+}
+.cam-controls[hidden] {
+  display: none;
+}
+.cam-controls .btn {
+  padding: 0.65em 1.2em;
+}
+.hold-btn {
+  touch-action: none; /* keep pointerdown-hold working on touch screens */
+  user-select: none;
+}
+.hold-btn[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+#cam-record[aria-pressed="true"] {
+  border-color: var(--danger);
+  color: var(--danger);
+  animation: rec-blink 1.2s step-end infinite;
+}
+@keyframes rec-blink {
+  50% {
+    color: var(--muted);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #cam-record[aria-pressed="true"] {
+    animation: none;
+  }
+}
+
+/* Output viewport. */
+.viewport {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  background: oklch(10% 0 0);
+  min-height: 12rem;
+}
+.viewport canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.viewport[data-empty="true"] canvas {
+  display: none;
+}
+.viewport-hint {
+  position: absolute;
+  color: oklch(60% 0 0);
+  font-size: var(--step--1);
+  font-family: var(--font-mono);
+  pointer-events: none;
+}
+.viewport[data-empty="false"] .viewport-hint {
+  display: none;
+}
+
+.status[data-kind="done"] {
+  color: var(--accent);
+}
+.status[data-kind="busy"] {
+  color: var(--muted);
+}
