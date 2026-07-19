@@ -47,10 +47,45 @@ export async function startLive(canvas: HTMLCanvasElement, bitrate: number): Pro
   let lastDelta: Uint8Array | null = null;
   let outTs = 0;
 
+  // Mobile cameras deliver frames in the sensor's native (landscape) orientation
+  // and hand the browser rotation/flip metadata to apply at render time. Pushing
+  // raw pixels through the VP8 encoder → bitstream → decoder drops that metadata,
+  // so we capture it from the source frames and re-apply it when drawing.
+  let rotation = 0; // degrees clockwise to make the picture upright
+  let flip = false; // horizontal mirror (front-facing cameras)
+
+  const syncOrientation = (frame: VideoFrame) => {
+    const r = ((frame as unknown as { rotation?: number }).rotation ?? 0) % 360;
+    const f = (frame as unknown as { flip?: boolean }).flip ?? false;
+    if (r === rotation && f === flip) return;
+    rotation = r;
+    flip = f;
+    // A quarter turn swaps the canvas's aspect so the upright picture fits.
+    const w = r === 90 || r === 270 ? height : width;
+    const h = r === 90 || r === 270 ? width : height;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+  };
+
+  const drawToCanvas = (frame: VideoFrame) => {
+    if (rotation === 0 && !flip) {
+      ctx.drawImage(frame, 0, 0, width, height);
+      return;
+    }
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    if (flip) ctx.scale(-1, 1);
+    ctx.drawImage(frame, -width / 2, -height / 2, width, height);
+    ctx.restore();
+  };
+
   const makeDecoder = () =>
     new VideoDecoder({
       output: (frame) => {
-        if (!stopped) ctx.drawImage(frame, 0, 0, width, height);
+        if (!stopped) drawToCanvas(frame);
         frame.close();
       },
       // A corrupt-by-design stream can still push the decoder over the edge;
@@ -110,6 +145,7 @@ export async function startLive(canvas: HTMLCanvasElement, bitrate: number): Pro
   });
 
   const encodeFrame = (frame: VideoFrame) => {
+    syncOrientation(frame);
     if (!stopped && encoder.state === "configured" && encoder.encodeQueueSize < 4) {
       encoder.encode(frame, { keyFrame: wantKey });
       wantKey = false;
