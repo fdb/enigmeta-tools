@@ -6,7 +6,9 @@ import { initTheme } from "../src/theme";
 
 import { buildGrid } from "./grid";
 import type { Grid, GridKind, GridSpec } from "./grid";
-import { ALGORITHMS, generate } from "./generate";
+import { ALGORITHMS, generate, mazeBounds } from "./generate";
+import { applyStorage, ballFits } from "./storage";
+import type { Storage } from "./storage";
 import type { Algorithm, Entrance, Maze } from "./generate";
 import { renderSvg } from "./svg";
 
@@ -29,6 +31,9 @@ const biasOut = $<HTMLOutputElement>("bias-out");
 const braid = $<HTMLInputElement>("braid");
 const braidOut = $<HTMLOutputElement>("braid-out");
 const entrance = $<HTMLSelectElement>("entrance");
+const storage = $<HTMLSelectElement>("storage");
+const storageNote = $<HTMLParagraphElement>("storage-note");
+const ball = $<HTMLInputElement>("ball");
 const entranceCenter = $<HTMLOptionElement>("entrance-center");
 const seed = $<HTMLInputElement>("seed");
 const newMaze = $<HTMLButtonElement>("new-maze");
@@ -93,7 +98,15 @@ const randomSeed = () => Math.random().toString(36).slice(2, 8);
 
 let grid: Grid | null = null;
 let gridKey = "";
+let generated: Maze | null = null;
 let maze: Maze | null = null;
+
+const STORAGE_NOTES: Record<Storage, string> = {
+  none: "The entrance is an opening in the outer wall.",
+  closed: "The entrance is walled off; the ball rests in the first cell.",
+  pocket: "The corridor carries on past the outer wall into a closed bay that holds the ball.",
+  hook: "An L-shaped bay: out through the entrance, then sideways, so the ball sits behind a wall.",
+};
 
 function syncControls() {
   const k = kind();
@@ -179,8 +192,8 @@ function update(regenerate: boolean) {
       gridKey = key;
       regenerate = true;
     }
-    if (regenerate || !maze) {
-      maze = generate(grid, {
+    if (regenerate || !generated) {
+      generated = generate(grid, {
         algorithm: algorithm.value as Algorithm,
         bias: parseInt(bias.value, 10) / 100,
         braid: parseInt(braid.value, 10) / 100,
@@ -194,6 +207,11 @@ function update(regenerate: boolean) {
     return;
   }
 
+  maze = applyStorage(generated, {
+    storage: storage.value as Storage,
+    ball: num(ball, 6),
+    wall: num(wall, 1),
+  });
   preview.innerHTML = renderSvg(maze, svgOptions(true));
 
   const n = grid.centers.length;
@@ -202,14 +220,21 @@ function update(regenerate: boolean) {
     `${n.toLocaleString()} cells · solution ${maze.solution.length.toLocaleString()} cells ` +
     `(${Math.round((100 * maze.solution.length) / n)}% of the maze) · ${maze.deadEnds.toLocaleString()} dead ends`;
 
-  const { minX, minY, maxX, maxY } = grid.bounds;
   const w = num(wall, 1);
-  const pad = baseOn.checked ? 2 * num(baseMargin, 0) : 0;
-  const mm = (v: number) => `${Math.round((v + w + pad) * 10) / 10}`;
-  footprint.textContent =
-    `Maze ${mm(maxX - minX - pad)} × ${mm(maxY - minY - pad)} mm` +
-    (baseOn.checked ? ` · plate ${mm(maxX - minX)} × ${mm(maxY - minY)} mm` : "");
+  const mm = (v: number, extra: number) => `${Math.round((v + w + extra) * 10) / 10}`;
+  const gb = grid.bounds;
+  const mb = mazeBounds(maze);
+  const border = 2 * num(baseMargin, 0);
+  footprint.textContent = `Maze ${mm(gb.maxX - gb.minX, 0)} × ${mm(gb.maxY - gb.minY, 0)} mm`;
+  if (baseOn.checked)
+    footprint.textContent += ` · plate ${mm(mb.maxX - mb.minX, border)} × ${mm(mb.maxY - mb.minY, border)} mm`;
   if (w >= num(cell, 8) * 0.6) footprint.textContent += " · walls nearly fill the cells";
+  if (storage.value !== "none" && !ballFits(num(cell, 8), w, num(ball, 6)))
+    footprint.textContent += " · the ball is too wide for the corridors";
+  storageNote.textContent =
+    generated.doors[0] < 0 && storage.value !== "none"
+      ? "The route starts in the centre, so there is no entrance to store the ball at."
+      : STORAGE_NOTES[storage.value as Storage];
 
   saveState();
 }
@@ -240,6 +265,8 @@ const STATE_FIELDS: (HTMLInputElement | HTMLSelectElement)[] = [
   bias,
   braid,
   entrance,
+  storage,
+  ball,
   seed,
   cell,
   wall,
@@ -289,7 +316,9 @@ form.addEventListener("input", (e) => {
   if (t === difficulty) applyDifficulty();
   if (t instanceof HTMLInputElement && t.name === "kind") applyDifficulty();
   // Display-only changes re-render without generating a new maze.
-  const displayOnly = [showSolution, heatmap, wall, height, base, baseMargin, baseOn].includes(t as HTMLInputElement);
+  const displayOnly = [showSolution, heatmap, wall, height, base, baseMargin, baseOn, storage, ball].includes(
+    t as HTMLInputElement,
+  );
   update(!displayOnly);
 });
 

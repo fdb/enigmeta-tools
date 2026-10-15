@@ -9,6 +9,7 @@
 import ClipperLib from "clipper-lib";
 import type { Path, PolyNode } from "clipper-lib";
 import type { Maze } from "./generate";
+import { mazeBounds, standingWalls } from "./generate";
 import type { Point } from "./grid";
 import { wallEndpoints } from "./grid";
 
@@ -63,9 +64,7 @@ export function wallFootprint(maze: Maze, wall: number): Shape[] {
   const posts = new Map<string, Point>();
   const addPost = (p: Point) => posts.set(`${Math.round(p.x * SCALE)},${Math.round(p.y * SCALE)}`, p);
 
-  g.walls.forEach((w, i) => {
-    if (maze.open[i]) return;
-    const geom = w.geom;
+  standingWalls(maze).forEach((geom) => {
     const [p, q] = wallEndpoints(geom);
     addPost(p);
     addPost(q);
@@ -149,16 +148,54 @@ export function wallFootprint(maze: Maze, wall: number): Shape[] {
 
 /** Outline of the ground plate in model space, counter-clockwise. */
 export function baseOutline(maze: Maze, wall: number, margin: number): Point[] {
-  const { minX, minY, maxX, maxY } = maze.grid.bounds;
   const m = margin + wall / 2;
-  if (maze.grid.kind === "round") {
-    // Mirroring a circle about the grid centre leaves it in place.
-    return circle({ x: (minX + maxX) / 2, y: (minY + maxY) / 2 }, (maxX - minX) / 2 + m, 64);
+  const flip = toModel(maze);
+  if (maze.grid.kind !== "round") {
+    const { minX, minY, maxX, maxY } = mazeBounds(maze);
+    return orient(
+      [
+        { x: minX - m, y: minY - m },
+        { x: maxX + m, y: minY - m },
+        { x: maxX + m, y: maxY + m },
+        { x: minX - m, y: maxY + m },
+      ].map(flip),
+      true,
+    );
   }
-  return [
-    { x: minX - m, y: minY - m },
-    { x: maxX + m, y: minY - m },
-    { x: maxX + m, y: maxY + m },
-    { x: minX - m, y: maxY + m },
-  ];
+  // Mirroring a circle about the grid centre leaves it in place.
+  const { minX, minY, maxX, maxY } = maze.grid.bounds;
+  const disc = circle({ x: (minX + maxX) / 2, y: (minY + maxY) / 2 }, (maxX - minX) / 2 + m, 64);
+  if (!maze.extra.length) return disc;
+  // Extend the plate under walls outside the circle (a storage alcove).
+  let ex = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+  for (const l of maze.extra) {
+    ex = {
+      minX: Math.min(ex.minX, l.x1, l.x2),
+      minY: Math.min(ex.minY, l.y1, l.y2),
+      maxX: Math.max(ex.maxX, l.x1, l.x2),
+      maxY: Math.max(ex.maxY, l.y1, l.y2),
+    };
+  }
+  const box = [
+    { x: ex.minX - m, y: ex.minY - m },
+    { x: ex.maxX + m, y: ex.minY - m },
+    { x: ex.maxX + m, y: ex.maxY + m },
+    { x: ex.minX - m, y: ex.maxY + m },
+  ].map(flip);
+  const toPath = (r: Point[]): Path =>
+    orient(r, true).map((p) => ({ X: Math.round(p.x * SCALE), Y: Math.round(p.y * SCALE) }));
+  const clipper = new ClipperLib.Clipper();
+  clipper.AddPaths([toPath(disc), toPath(box)], ClipperLib.PolyType.ptSubject, true);
+  const tree = new ClipperLib.PolyTree();
+  clipper.Execute(
+    ClipperLib.ClipType.ctUnion,
+    tree,
+    ClipperLib.PolyFillType.pftNonZero,
+    ClipperLib.PolyFillType.pftNonZero,
+  );
+  const outer = tree.Childs()[0].Contour();
+  return orient(
+    ClipperLib.Clipper.CleanPolygon(outer, 1.5).map((p) => ({ x: p.X / SCALE, y: p.Y / SCALE })),
+    true,
+  );
 }
