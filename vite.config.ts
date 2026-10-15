@@ -16,6 +16,7 @@ export default defineConfig({
         "pdf-extractor": resolve(root, "pdf-extractor/index.html"),
         "key-converter": resolve(root, "key-converter/index.html"),
         datamosh: resolve(root, "datamosh/index.html"),
+        maze: resolve(root, "maze/index.html"),
       },
     },
   },
