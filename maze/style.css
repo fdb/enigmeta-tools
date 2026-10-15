@@ -180,3 +180,13 @@ input[type="range"] {
   height: auto;
   max-height: 80vh;
 }
+
+.params .sub {
+  font-size: var(--step-0);
+  color: var(--heading);
+}
+.params .sub ~ .sub {
+  margin-top: var(--s-3);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--border);
+}

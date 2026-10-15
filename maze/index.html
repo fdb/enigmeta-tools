@@ -8,7 +8,7 @@
     <title>Maze generator · enigmeta tools</title>
     <meta
       name="description"
-      content="Generate square, round, hexagonal and triangular mazes in your browser. Export to SVG for printing or cutting, or to STL for 3D printing."
+      content="Generate square, round, hexagonal and triangular mazes in your browser. Export to SVG, DXF, STEP or STL, in millimetres."
     />
     <link rel="stylesheet" href="/src/styles/tokens.css" />
     <link rel="stylesheet" href="/src/styles/base.css" />
@@ -39,8 +39,8 @@
         <h1>Maze generator</h1>
         <p>
           Square, round, hexagonal and triangular mazes. Every maze is solvable, and by default it is
-          <em>perfect</em>: exactly one route between any two points. Export an SVG to print, plot or laser-cut, or an
-          STL to 3D-print, with your own wall width and height.
+          <em>perfect</em>: exactly one route between any two points. Export SVG to print, plot or laser-cut, DXF or
+          STEP for CAD, or STL to 3D-print, all in millimetres at the size you set.
         </p>
       </div>
     </section>
@@ -123,8 +123,12 @@
           </fieldset>
 
           <fieldset class="params">
-            <legend>Dimensions <span class="muted small">— millimetres, for both exports</span></legend>
+            <legend>Dimensions <span class="muted small">— millimetres, for every export</span></legend>
             <div class="row">
+              <label class="num">
+                <span>Maze width</span>
+                <input type="number" id="width" min="5" max="5000" step="1" value="160" />
+              </label>
               <label class="num">
                 <span id="cell-label">Cell size</span>
                 <input type="number" id="cell" min="1" max="100" step="0.5" value="8" />
@@ -135,22 +139,34 @@
               </label>
             </div>
             <p class="muted small mono" id="footprint"></p>
+            <p class="muted small">
+              Width is measured across the outer walls. Set the width and the cell size follows, or set the cell size
+              and the width follows; whichever you set last is kept when the grid changes.
+            </p>
           </fieldset>
 
           <fieldset class="params">
             <legend>Export</legend>
+            <h3 class="sub">2D</h3>
             <div class="actions">
               <button type="button" class="btn btn-primary" id="download-svg">Download SVG</button>
+              <button type="button" class="btn btn-primary" id="download-dxf">Download DXF</button>
             </div>
-            <p class="muted small">The SVG includes the solution and colouring only if they are shown.</p>
+            <p class="muted small">
+              <strong>SVG</strong> for printing, plotting and laser cutting; it includes the solution and colouring only
+              if they are shown. <strong>DXF</strong> for CAD (Inventor: Sketch › Insert AutoCAD file, units mm): layer
+              <code>WALLS</code> has closed wall outlines ready to extrude, <code>CENTERLINES</code> the wall centre
+              lines and <code>SOLUTION</code> the route.
+            </p>
 
+            <h3 class="sub">3D</h3>
             <div class="row">
               <label class="num">
                 <span>Wall height</span>
                 <input type="number" id="height" min="0.2" max="200" step="0.2" value="6" />
               </label>
             </div>
-            <label class="check"> <input type="checkbox" id="base-on" checked /><span>Ground plane</span> </label>
+            <label class="check"><input type="checkbox" id="base-on" checked /><span>Ground plane</span></label>
             <div class="row" id="base-fields">
               <label class="num">
                 <span>Thickness</span>
@@ -162,11 +178,13 @@
               </label>
             </div>
             <div class="actions">
+              <button type="button" class="btn btn-primary" id="download-step">Download STEP</button>
               <button type="button" class="btn btn-primary" id="download-stl">Download STL</button>
             </div>
             <p class="muted small">
-              Walls are separate overlapping solids that slicers merge on import. Without a ground plane the walls may
-              fall apart into several pieces.
+              <strong>STEP</strong> opens as a solid body in CAD (Inventor, Fusion, SolidWorks, FreeCAD).
+              <strong>STL</strong> is a mesh for slicers. Both are watertight and in millimetres. With a ground plane
+              (border above 0) the maze is one solid; without one, each connected run of walls is its own body.
             </p>
           </fieldset>
         </form>

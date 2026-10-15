@@ -1,12 +1,20 @@
 // Development checks for maze generation and export. Run:
 //   node_modules/.bin/esbuild maze/test/maze.test.ts --bundle --format=esm \
-//     --platform=node --outfile=/tmp/maze.mjs && node /tmp/maze.mjs
+//     --platform=node --outfile=/tmp/maze.mjs && node /tmp/maze.mjs [out-dir]
+// With an out-dir, sample STEP/STL/DXF files are written there for checking
+// in a CAD kernel (see validate_step.py).
 import { buildGrid } from "../grid";
 import type { GridKind } from "../grid";
 import { ALGORITHMS, generate } from "../generate";
 import type { Algorithm, Entrance } from "../generate";
 import { renderSvg } from "../svg";
-import { buildStl } from "../stl";
+import { buildModel } from "../solid";
+import { encodeStl, triangulate } from "../stl";
+import { encodeStep } from "../step";
+import { encodeDxf } from "../dxf";
+import { writeFileSync } from "node:fs";
+
+const outDir = process.argv[2];
 
 let failures = 0;
 function check(name: string, ok: boolean, detail = "") {
@@ -60,27 +68,46 @@ for (const kind of kinds) {
   });
   check(`${kind} svg`, svg.startsWith("<svg") && svg.endsWith("</svg>") && !svg.includes("NaN"));
 
-  // STL: well-formed size, finite numbers, and positive enclosed volume
-  // (inside-out solids would subtract).
+  // Solid: every body watertight (each directed triangle edge matched by its
+  // reverse exactly once) with positive volume; STL and STEP well-formed.
   for (const base of [0, 2]) {
-    const buf = buildStl(m, { wall: 1.2, height: 8, base, margin: 3 });
-    const dv = new DataView(buf);
-    const count = dv.getUint32(80, true);
-    check(`${kind} stl size`, buf.byteLength === 84 + 50 * count);
+    const model = buildModel(m, { wall: 1.2, height: 8, base, margin: 3 });
+    const tris = triangulate(model);
+    const edges = new Map<string, number>();
+    const key = (a: number[], b: number[]) => `${a.join()}|${b.join()}`;
     let vol = 0;
-    let finite = true;
-    for (let t = 0; t < count; t++) {
-      const o = 84 + 50 * t + 12;
-      const p = [0, 1, 2].map((k) => [0, 1, 2].map((j) => dv.getFloat32(o + 12 * k + 4 * j, true)));
-      for (const q of p) for (const x of q) if (!Number.isFinite(x)) finite = false;
-      const [a, b, c] = p;
+    for (const [a, b, c] of tris) {
+      for (const [p, q] of [
+        [a, b],
+        [b, c],
+        [c, a],
+      ])
+        edges.set(key(p, q), (edges.get(key(p, q)) ?? 0) + 1);
       vol +=
         (a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0])) /
         6;
     }
-    check(`${kind} stl finite`, finite);
-    check(`${kind} stl volume`, vol > 0, `vol=${vol}`);
-    console.log(`${kind} base=${base}: ${n} cells, ${count} triangles, ${vol.toFixed(0)} mm³ (overlaps counted twice)`);
+    let unmatched = 0;
+    for (const [k, n] of edges) {
+      const [p, q] = k.split("|");
+      if (n !== 1 || edges.get(`${q}|${p}`) !== 1) unmatched++;
+    }
+    check(`${kind} base=${base} watertight`, unmatched === 0, `${unmatched} unmatched edges`);
+    check(`${kind} base=${base} volume`, vol > 0, `vol=${vol}`);
+    const stl = encodeStl(model);
+    check(`${kind} stl size`, stl.byteLength === 84 + 50 * tris.length);
+    const step = encodeStep(model, `maze-${kind}`);
+    check(`${kind} step`, step.startsWith("ISO-10303-21;") && !step.includes("NaN"));
+    const dxf = encodeDxf(m, 1.2);
+    check(`${kind} dxf`, dxf.includes("WALLS") && dxf.trimEnd().endsWith("EOF") && !dxf.includes("NaN"));
+    if (outDir) {
+      writeFileSync(`${outDir}/${kind}-base${base}.step`, step);
+      writeFileSync(`${outDir}/${kind}-base${base}.stl`, new Uint8Array(stl));
+      writeFileSync(`${outDir}/${kind}.dxf`, dxf);
+    }
+    console.log(
+      `${kind} base=${base}: ${n} cells, ${model.bodies.length} bodies, ${tris.length} triangles, ${vol.toFixed(0)} mm³`,
+    );
   }
 }
 

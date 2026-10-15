@@ -9,7 +9,6 @@ import type { Grid, GridKind, GridSpec } from "./grid";
 import { ALGORITHMS, generate } from "./generate";
 import type { Algorithm, Entrance, Maze } from "./generate";
 import { renderSvg } from "./svg";
-import { buildStl } from "./stl";
 
 initTheme();
 
@@ -35,6 +34,7 @@ const seed = $<HTMLInputElement>("seed");
 const newMaze = $<HTMLButtonElement>("new-maze");
 const showSolution = $<HTMLInputElement>("show-solution");
 const heatmap = $<HTMLInputElement>("heatmap");
+const width = $<HTMLInputElement>("width");
 const cell = $<HTMLInputElement>("cell");
 const cellLabel = $<HTMLSpanElement>("cell-label");
 const wall = $<HTMLInputElement>("wall");
@@ -46,6 +46,8 @@ const base = $<HTMLInputElement>("base");
 const baseMargin = $<HTMLInputElement>("base-margin");
 const downloadSvg = $<HTMLButtonElement>("download-svg");
 const downloadStl = $<HTMLButtonElement>("download-stl");
+const downloadDxf = $<HTMLButtonElement>("download-dxf");
+const downloadStep = $<HTMLButtonElement>("download-step");
 const statusEl = $<HTMLParagraphElement>("status");
 const preview = $<HTMLDivElement>("preview");
 
@@ -116,6 +118,34 @@ function applyDifficulty() {
   rows.value = String(s.rows);
 }
 
+/** Grid width in mm per mm of cell size (grids scale linearly from the origin). */
+function unitWidth(k: GridKind, c: number, r: number): number {
+  switch (k) {
+    case "square":
+      return c;
+    case "round":
+      return 2 * r;
+    case "hex":
+      return Math.sqrt(3) * (c + (r > 1 ? 0.5 : 0));
+    case "triangle":
+      return (c + 1) / 2;
+  }
+}
+
+// Width and cell size are linked; whichever was edited last is kept fixed.
+let sizeMaster: "width" | "cell" = "width";
+
+function syncSize() {
+  const u = unitWidth(kind(), int(cols), int(rows));
+  const w = num(wall, 1);
+  if (sizeMaster === "width") {
+    const c = (num(width, 160) - w) / u;
+    cell.value = String(Math.max(0.01, Math.round(c * 1000) / 1000));
+  } else {
+    width.value = String(Math.round((u * num(cell, 8) + w) * 10) / 10);
+  }
+}
+
 function spec(): GridSpec {
   return { kind: kind(), cols: int(cols), rows: int(rows), cell: num(cell, 8) };
 }
@@ -134,6 +164,7 @@ function svgOptions(forPreview: boolean) {
 
 function update(regenerate: boolean) {
   syncControls();
+  syncSize();
   const s = spec();
   const key = JSON.stringify(s);
   try {
@@ -174,9 +205,10 @@ function update(regenerate: boolean) {
   const { minX, minY, maxX, maxY } = grid.bounds;
   const w = num(wall, 1);
   const pad = baseOn.checked ? 2 * num(baseMargin, 0) : 0;
-  const mm = (v: number) => `${Math.round(v + w + pad)}`;
+  const mm = (v: number) => `${Math.round((v + w + pad) * 10) / 10}`;
   footprint.textContent =
-    `Footprint ${mm(maxX - minX)} × ${mm(maxY - minY)} mm` + (baseOn.checked ? " with ground plane" : "");
+    `Maze ${mm(maxX - minX - pad)} × ${mm(maxY - minY - pad)} mm` +
+    (baseOn.checked ? ` · plate ${mm(maxX - minX)} × ${mm(maxY - minY)} mm` : "");
   if (w >= num(cell, 8) * 0.6) footprint.textContent += " · walls nearly fill the cells";
 
   saveState();
@@ -202,6 +234,7 @@ function download(data: BlobPart, type: string, name: string) {
 const STATE_FIELDS: (HTMLInputElement | HTMLSelectElement)[] = [
   difficulty,
   cols,
+  width,
   rows,
   algorithm,
   bias,
@@ -221,6 +254,7 @@ function saveState() {
   p.set("kind", kind());
   for (const el of STATE_FIELDS) p.set(el.id, el.value);
   for (const el of STATE_CHECKS) p.set(el.id, el.checked ? "1" : "0");
+  p.set("size", sizeMaster);
   history.replaceState(null, "", `#${p}`);
 }
 
@@ -240,6 +274,7 @@ function loadState(): boolean {
     const v = p.get(el.id);
     if (v !== null) el.checked = v === "1";
   }
+  if (p.get("size") === "cell") sizeMaster = "cell";
   return true;
 }
 
@@ -249,6 +284,8 @@ form.addEventListener("submit", (e) => e.preventDefault());
 
 form.addEventListener("input", (e) => {
   const t = e.target as HTMLElement;
+  if (t === width) sizeMaster = "width";
+  if (t === cell) sizeMaster = "cell";
   if (t === difficulty) applyDifficulty();
   if (t instanceof HTMLInputElement && t.name === "kind") applyDifficulty();
   // Display-only changes re-render without generating a new maze.
@@ -266,15 +303,33 @@ downloadSvg.addEventListener("click", () => {
   download(renderSvg(maze, svgOptions(false)), "image/svg+xml", `${fileStem()}.svg`);
 });
 
-downloadStl.addEventListener("click", () => {
-  if (!maze) return;
-  const stl = buildStl(maze, {
+function solidOptions() {
+  return {
     wall: num(wall, 1),
     height: num(height, 6),
     base: baseOn.checked ? num(base, 1.6) : 0,
-    margin: num(baseMargin, 0),
-  });
-  download(stl, "model/stl", `${fileStem()}.stl`);
+    margin: Math.max(0, parseFloat(baseMargin.value) || 0),
+  };
+}
+
+// CAD exports pull in the polygon-union library, so load them on first use.
+downloadDxf.addEventListener("click", async () => {
+  if (!maze) return;
+  const { encodeDxf } = await import("./dxf");
+  download(encodeDxf(maze, num(wall, 1)), "image/vnd.dxf", `${fileStem()}.dxf`);
+});
+
+downloadStep.addEventListener("click", async () => {
+  if (!maze) return;
+  const [{ buildModel }, { encodeStep }] = await Promise.all([import("./solid"), import("./step")]);
+  const name = fileStem();
+  download(encodeStep(buildModel(maze, solidOptions()), name), "model/step", `${name}.step`);
+});
+
+downloadStl.addEventListener("click", async () => {
+  if (!maze) return;
+  const [{ buildModel }, { encodeStl }] = await Promise.all([import("./solid"), import("./stl")]);
+  download(encodeStl(buildModel(maze, solidOptions())), "model/stl", `${fileStem()}.stl`);
 });
 
 if (!loadState()) {

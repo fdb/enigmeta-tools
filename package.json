@@ -12,12 +12,15 @@
     "format": "prettier --write ."
   },
   "devDependencies": {
+    "@types/earcut": "^3.0.0",
     "@types/node": "^22.19.20",
     "prettier": "^3.4.2",
     "typescript": "^5.7.3",
     "vite": "^6.0.7"
   },
   "dependencies": {
+    "clipper-lib": "^6.4.2",
+    "earcut": "^3.0.1",
     "fflate": "^0.8.2"
   }
 }
