@@ -1,0 +1,192 @@
+/* Maze generator. Controls on the left, a paper-like preview on the right;
+   stacked on narrow screens. */
+
+.maze-layout {
+  display: grid;
+  gap: var(--s-5);
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+/* On narrow screens the maze comes first, controls below. */
+.preview-col {
+  order: -1;
+}
+@media (min-width: 52rem) {
+  .maze-layout {
+    grid-template-columns: minmax(18rem, 22rem) 1fr;
+  }
+  .preview-col {
+    order: 0;
+    position: sticky;
+    top: var(--s-4);
+  }
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.params {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  margin: 0;
+  min-width: 0;
+}
+.params legend {
+  color: var(--heading);
+  font-weight: 600;
+  padding-inline: var(--s-2);
+}
+.params [hidden] {
+  display: none;
+}
+
+.param {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.param > label {
+  font-size: var(--step--1);
+}
+.param output {
+  color: var(--heading);
+  font-weight: 600;
+}
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: var(--s-3);
+}
+.seed-row {
+  grid-template-columns: 1fr auto;
+  align-items: end;
+}
+.seed-row .btn {
+  padding: 0.65em 1em;
+}
+
+.num {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  font-size: var(--step--1);
+}
+.num input,
+.num select {
+  font: inherit;
+  font-size: var(--step-0);
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 0.4em 0.5em;
+  width: 100%;
+  transition: border-color var(--ease);
+}
+.num input:hover,
+.num select:hover {
+  border-color: var(--muted);
+}
+
+.check {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  font-size: var(--step--1);
+  cursor: pointer;
+}
+.check input {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--accent);
+  flex: 0 0 auto;
+  translate: 0 2px;
+}
+
+/* Shape picker. */
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--border);
+}
+.segmented label {
+  position: relative;
+  cursor: pointer;
+}
+.segmented label + label {
+  border-left: 1px solid var(--border);
+}
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  cursor: pointer;
+}
+.segmented span {
+  display: block;
+  text-align: center;
+  padding: 0.55em 0.2em;
+  font-size: var(--step--1);
+  font-weight: 550;
+  color: var(--muted);
+  background: var(--bg);
+  transition:
+    background var(--ease),
+    color var(--ease);
+}
+.segmented label:hover span {
+  color: var(--text);
+  background: var(--surface-2);
+}
+.segmented input:checked + span {
+  color: var(--accent-fg);
+  background: var(--accent);
+}
+.segmented input:focus-visible + span {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+}
+.actions .btn {
+  padding: 0.65em 1.2em;
+}
+
+/* Preview: always ink on paper, matching the exported SVG. */
+.preview {
+  border: 1px solid var(--border);
+  background: oklch(100% 0 0);
+  padding: var(--s-4);
+  display: grid;
+  place-items: center;
+}
+.preview svg {
+  width: 100%;
+  height: auto;
+  max-height: 80vh;
+}
+
+.params .sub {
+  font-size: var(--step-0);
+  color: var(--heading);
+}
+.params .sub ~ .sub {
+  margin-top: var(--s-3);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--border);
+}

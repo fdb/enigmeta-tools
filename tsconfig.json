@@ -15,6 +15,6 @@
     "allowJs": true,
     "noEmit": true
   },
-  "include": ["src", "pdf-extractor", "key-converter", "datamosh", "vite.config.ts"],
-  "exclude": ["node_modules", "dist", "src/wasm", "key-converter/test"]
+  "include": ["src", "pdf-extractor", "key-converter", "datamosh", "maze", "vite.config.ts"],
+  "exclude": ["node_modules", "dist", "src/wasm", "key-converter/test", "maze/test"]
 }
