@@ -14,13 +14,13 @@
     <link rel="stylesheet" href="/src/styles/base.css" />
     <link rel="stylesheet" href="/src/styles/site.css" />
   </head>
-  <body>
-    <header class="site-header">
-      <div class="wrap">
-        <a class="brand" href="/">
-          tools<span class="dot">.</span>enigmeta<span class="dot">.</span>com
-          <span class="crumb">/ key-converter</span>
-        </a>
+  <body class="app">
+    <header class="bar">
+      <a class="brand" href="/">
+        tools<span class="dot">.</span>enigmeta<span class="dot">.</span>com<span class="crumb">/key-converter</span>
+      </a>
+      <p class="bar-desc">OpenSSH private key → unencrypted PKCS#8 or SEC1 PEM. Your key never leaves this tab.</p>
+      <div class="bar-end">
         <button
           class="theme-toggle"
           data-theme-toggle
@@ -28,109 +28,98 @@
           aria-label="Toggle dark mode"
           title="Toggle dark mode"
         >
-          ◐
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5" />
+            <path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor" />
+          </svg>
         </button>
       </div>
     </header>
 
-    <section class="hero">
-      <div class="wrap stack">
-        <h1>Private key converter</h1>
-        <p>
-          Turn an OpenSSH private key (like <code>id_ed25519</code>) into an unencrypted <strong>PKCS#8</strong> or
-          <strong>SEC1</strong> PEM — the formats most tools and libraries expect. Encrypted keys are decrypted here
-          too; just enter the passphrase.
-        </p>
-        <p class="privacy">
-          Everything runs in your browser. Your key and passphrase never leave this device — there is no server to send
-          them to.
-        </p>
-      </div>
-    </section>
+    <main class="workspace kc">
+      <form class="panel" id="form" autocomplete="off">
+        <section class="section">
+          <h2 class="section-head">
+            <span class="n">01</span> <label for="input">OpenSSH key</label>
+            <span class="aside">
+              <input
+                type="file"
+                id="file"
+                class="visually-hidden"
+                accept=".pem,.key,.txt,text/plain,application/octet-stream"
+              />
+              <label for="file" class="btn file-btn">Load file…</label>
+            </span>
+          </h2>
+          <textarea
+            id="input"
+            rows="9"
+            spellcheck="false"
+            autocapitalize="off"
+            autocorrect="off"
+            placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;…&#10;-----END OPENSSH PRIVATE KEY-----"
+          ></textarea>
+        </section>
 
-    <main class="site-main">
-      <div class="wrap">
-        <form class="kc stack-lg" id="form" autocomplete="off">
-          <div class="field">
-            <div class="field-head">
-              <label for="input">Private key</label>
-              <span class="file-load">
-                <input
-                  type="file"
-                  id="file"
-                  class="visually-hidden"
-                  accept=".pem,.key,.txt,text/plain,application/octet-stream"
-                />
-                <label for="file" class="btn file-btn">Load from file…</label>
-              </span>
-            </div>
-            <textarea
-              id="input"
+        <section class="section">
+          <h2 class="section-head">
+            <span class="n">02</span> <label for="passphrase">Passphrase</label>
+            <span class="aside">only if encrypted</span>
+          </h2>
+          <div class="pass-row">
+            <input
+              type="password"
+              id="passphrase"
               class="mono"
-              rows="8"
-              spellcheck="false"
               autocapitalize="off"
               autocorrect="off"
-              placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;…&#10;-----END OPENSSH PRIVATE KEY-----"
-            ></textarea>
+              autocomplete="off"
+              placeholder="blank if none"
+            />
+            <button type="button" class="btn" id="toggle-pass" aria-pressed="false">Show</button>
           </div>
+        </section>
 
-          <div class="field">
-            <label for="passphrase">Passphrase <span class="muted small">(only if the key is encrypted)</span></label>
-            <div class="pass-row">
-              <input
-                type="password"
-                id="passphrase"
-                class="mono"
-                autocapitalize="off"
-                autocorrect="off"
-                autocomplete="off"
-                placeholder="Leave blank if the key has no passphrase"
-              />
-              <button type="button" class="btn" id="toggle-pass" aria-pressed="false">Show</button>
-            </div>
+        <fieldset class="section">
+          <legend class="section-head"><span class="n">03</span> Output format</legend>
+          <div class="segmented" role="radiogroup" aria-label="Output format">
+            <label><input type="radio" name="format" value="pkcs8" checked /><span>PKCS#8</span></label>
+            <label><input type="radio" name="format" value="sec1" /><span>SEC1</span></label>
           </div>
+          <p class="hint">PKCS#8 works for Ed25519 and ECDSA keys; SEC1 is for ECDSA only.</p>
+        </fieldset>
 
-          <fieldset class="field format">
-            <legend>Output format</legend>
-            <label class="radio">
-              <input type="radio" name="format" value="pkcs8" checked />
-              <span><strong>PKCS#8</strong> — Ed25519 or ECDSA</span>
-            </label>
-            <label class="radio">
-              <input type="radio" name="format" value="sec1" />
-              <span><strong>SEC1</strong> — ECDSA only</span>
-            </label>
-          </fieldset>
-
-          <div class="actions">
+        <section class="section">
+          <div class="btn-row">
             <button type="submit" class="btn btn-primary" id="convert">Convert</button>
             <button type="button" class="btn" id="clear">Clear</button>
           </div>
-        </form>
+        </section>
+      </form>
 
-        <p class="status" id="status" data-kind="idle" role="status" aria-live="polite">
-          Paste a private key and press Convert.
-        </p>
-
-        <section class="result" id="result" hidden>
+      <section class="stage" aria-label="Converted key">
+        <div class="result stage-fill" id="result" hidden>
           <div class="result-head">
             <span class="summary mono" id="summary"></span>
-            <div class="actions">
+            <div class="btn-row">
               <button type="button" class="btn" id="copy">Copy</button>
-              <button type="button" class="btn btn-primary" id="download">Download</button>
+              <button type="button" class="btn btn-primary" id="download">↓ Download</button>
             </div>
           </div>
-          <textarea id="output" class="mono" rows="10" readonly spellcheck="false"></textarea>
-        </section>
-      </div>
+          <textarea id="output" readonly spellcheck="false"></textarea>
+        </div>
+        <p class="empty-hint stage-empty">The converted PEM appears here.</p>
+      </section>
     </main>
 
-    <footer class="site-footer">
-      <div class="wrap">
-        <span>All processing happens in your browser. Nothing is uploaded.</span>
-        <span><a href="/">← all tools</a></span>
-      </div>
+    <footer class="statusbar">
+      <p class="status" id="status" data-kind="idle" role="status" aria-live="polite">
+        Paste a private key and press Convert.
+      </p>
+      <span class="end">
+        <span class="local">decrypted here, nothing uploaded</span>
+        <a href="/">all tools</a>
+      </span>
     </footer>
 
     <script type="module" src="/key-converter/main.ts"></script>

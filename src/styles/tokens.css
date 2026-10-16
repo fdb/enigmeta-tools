@@ -26,12 +26,12 @@
   --danger: oklch(55% 0.17 27);
 
   /* Type. */
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas,
-    monospace;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
 
-  /* Fluid type scale (1.25 ratio, clamped). */
+  /* Fluid type scale (1.25 ratio, clamped). Step -2 is the app-chrome size:
+     panel labels, section heads, the status bar. */
+  --step--2: 0.6875rem;
   --step--1: clamp(0.78rem, 0.76rem + 0.1vw, 0.84rem);
   --step-0: clamp(0.95rem, 0.92rem + 0.16vw, 1.05rem);
   --step-1: clamp(1.19rem, 1.11rem + 0.39vw, 1.45rem);
@@ -46,6 +46,12 @@
   --s-5: 1.5rem;
   --s-6: 2.25rem;
   --s-7: 3.5rem;
+
+  /* App shell: header bar, status bar and parameter panel. */
+  --bar-h: 2.5rem;
+  --status-h: 1.75rem;
+  --panel-w: 20rem;
+  --control-h: 1.75rem;
 
   --measure: 66ch;
   --maxw: 64rem;

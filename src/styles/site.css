@@ -1,22 +1,43 @@
-/* Shared app chrome: header, footer, cards, dropzone, asset gallery. */
+/* Shared app chrome. Every tool is a small desktop-style app: a header bar, a
+   parameter panel on the left, a stage that fills the rest of the window and a
+   status bar along the bottom. On narrow screens the panel and the stage stack
+   and the page scrolls. */
 
-.site-header {
-  border-bottom: 1px solid var(--border);
+/* Shell ------------------------------------------------------------------ */
+
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100dvh;
+  font-size: var(--step--1);
+  line-height: 1.45;
 }
-.site-header .wrap {
+@media (min-width: 52rem) {
+  .app {
+    height: 100dvh;
+    overflow: hidden;
+  }
+}
+
+/* Header bar. */
+.bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--s-4);
-  padding-block: var(--s-3);
+  min-height: var(--bar-h);
+  padding-inline: var(--s-3);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
 }
 .brand {
   display: inline-flex;
   align-items: baseline;
-  gap: var(--s-2);
+  flex: 0 0 auto;
   color: var(--heading);
-  font-weight: 650;
-  letter-spacing: -0.01em;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 .brand:hover {
   color: var(--heading);
@@ -24,101 +45,592 @@
 }
 .brand .dot {
   color: var(--accent);
+  display: inline-block;
+  transition: transform var(--ease);
+}
+/* The one bit of mischief in the header: the dots hop when you head home. */
+.brand:hover .dot {
+  transform: translateY(-0.2em);
+}
+.brand:hover .dot + .dot,
+.brand:hover .dot ~ .dot {
+  transition-delay: 0.05s;
 }
 .brand .crumb {
   color: var(--muted);
   font-weight: 450;
+  margin-left: 0.15em;
+}
+.bar-desc {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+  color: var(--muted);
+  font-size: var(--step--2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 40rem) {
+  .bar-desc {
+    display: none;
+  }
+}
+.bar-end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
 }
 
-.theme-toggle {
-  width: 2.25rem;
-  height: 2.25rem;
+.theme-toggle,
+.icon-btn {
+  width: var(--control-h);
+  height: var(--control-h);
   display: inline-grid;
   place-items: center;
+  flex: 0 0 auto;
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--step--1);
+  line-height: 1;
   cursor: pointer;
   transition:
     background var(--ease),
-    border-color var(--ease);
+    border-color var(--ease),
+    transform var(--ease);
 }
-.theme-toggle:hover {
+.theme-toggle:hover,
+.icon-btn:hover {
   border-color: var(--muted);
   background: var(--surface-2);
 }
-
-.site-main {
-  padding-block: var(--s-6) var(--s-7);
+.theme-toggle {
+  font-size: var(--step-0);
+}
+.theme-toggle:hover {
+  transform: rotate(180deg);
 }
 
-.hero {
-  border-bottom: 1px solid var(--border);
-  padding-block: var(--s-6);
+/* Workspace: panel + stage. */
+.workspace {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 0;
 }
-.hero p {
-  color: var(--muted);
-  font-size: var(--step-1);
+@media (min-width: 52rem) {
+  .workspace {
+    grid-template-columns: var(--panel-w) minmax(0, 1fr);
+  }
+}
+@media (max-width: 51.99rem) {
+  /* Tools whose output matters most show it first on a phone. */
+  .workspace.stage-first .stage {
+    order: -1;
+  }
 }
 
-.site-footer {
-  border-top: 1px solid var(--border);
-  color: var(--muted);
-  font-size: var(--step--1);
-}
-.site-footer .wrap {
-  padding-block: var(--s-5);
+/* Parameter panel. */
+.panel {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--s-2) var(--s-4);
-  justify-content: space-between;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+@media (min-width: 52rem) {
+  .panel {
+    overflow-y: auto;
+    border-bottom: 0;
+    border-right: 1px solid var(--border);
+    scrollbar-width: thin;
+  }
+}
+.panel [hidden] {
+  display: none !important;
 }
 
-/* Tool cards on the landing page. */
-.tool-card {
+.section {
   display: flex;
   flex-direction: column;
   gap: var(--s-2);
-  padding: var(--s-4);
-  border: 1px solid var(--border);
-  background: var(--surface);
+  margin: 0;
+  padding: var(--s-3);
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+.section:last-child {
+  border-bottom: 0;
+}
+/* Section heads: numbered, mono, small caps. */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  padding: 0;
+  margin-bottom: var(--s-1);
+  float: left; /* lets a <legend> sit inside the fieldset flow */
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.section-head + * {
+  clear: both;
+}
+.section-head .n {
+  color: var(--accent);
+}
+.section-head .aside {
+  margin-left: auto;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 450;
+}
+
+/* A parameter row: label on the left, control on the right. */
+.prop {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s-2);
+  min-height: var(--control-h);
+}
+.prop > :first-child {
   color: var(--text);
+  font-size: var(--step--2);
+  line-height: 1.25;
+}
+/* Slider rows: label · slider · value. */
+.prop.range {
+  grid-template-columns: 6.5rem minmax(0, 1fr) 2.75rem;
+}
+.prop output {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--heading);
+  text-align: right;
+  white-space: nowrap;
+}
+/* Two controls side by side, each with its own small label above. */
+.pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+  gap: var(--s-2);
+}
+.pair > label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--step--2);
+  min-width: 0;
+}
+.hint {
+  color: var(--muted);
+  font-size: var(--step--2);
+  line-height: 1.4;
+  max-width: none;
+}
+.hint:empty {
+  display: none;
+}
+
+/* Collapsible help, so the long explanations are there but out of the way. */
+.help {
+  font-size: var(--step--2);
+  color: var(--muted);
+}
+.help summary {
+  cursor: pointer;
+  list-style: none;
+  width: max-content;
+  transition: color var(--ease);
+}
+.help summary::-webkit-details-marker {
+  display: none;
+}
+.help summary::before {
+  content: "+ ";
+  font-family: var(--font-mono);
+  color: var(--accent);
+}
+.help[open] summary::before {
+  content: "− ";
+}
+.help summary:hover {
+  color: var(--text);
+}
+.help > :not(summary) {
+  margin-top: var(--s-2);
+  line-height: 1.45;
+  max-width: none;
+}
+.help strong,
+.help code {
+  color: var(--text);
+}
+
+/* Controls ---------------------------------------------------------------- */
+
+.app input[type="number"],
+.app input[type="text"],
+.app input[type="password"],
+.app select,
+.app textarea {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+  font-size: var(--step--1);
+  color: var(--heading);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 0 0.5em;
+  height: var(--control-h);
   transition:
     border-color var(--ease),
-    background var(--ease),
-    transform var(--ease);
+    background var(--ease);
 }
-.tool-card:hover {
+.app input[type="number"],
+.app input.mono {
+  font-family: var(--font-mono);
+}
+.app textarea {
+  height: auto;
+  padding: 0.5em;
+  font-family: var(--font-mono);
+  line-height: 1.5;
+  resize: vertical;
+}
+.app select {
+  padding-right: 1.6em;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(-45deg, transparent 50%, var(--muted) 50%);
+  background-position:
+    calc(100% - 0.85em) 55%,
+    calc(100% - 0.55em) 55%;
+  background-size: 0.3em 0.3em;
+  background-repeat: no-repeat;
+}
+.app input:hover,
+.app select:hover,
+.app textarea:hover {
+  border-color: var(--muted);
+}
+.app input:focus,
+.app select:focus,
+.app textarea:focus {
   border-color: var(--accent);
-  background: var(--surface-2);
-  text-decoration: none;
-  transform: translateY(-2px);
+  outline: none;
 }
-.tool-card h3 {
+.app ::placeholder {
+  color: var(--muted);
+  opacity: 0.7;
+}
+/* Phones zoom into anything under 16px on focus. */
+@media (pointer: coarse) {
+  .app input[type="number"],
+  .app input[type="text"],
+  .app input[type="password"],
+  .app select,
+  .app textarea {
+    font-size: 16px;
+    height: 2.25rem;
+  }
+  .app textarea {
+    height: auto;
+  }
+}
+
+input[type="range"] {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 1.5rem;
+  font-size: var(--step--2);
+  cursor: pointer;
+}
+.check input {
+  width: 0.95rem;
+  height: 0.95rem;
+  margin: 0;
+  accent-color: var(--accent);
+  flex: 0 0 auto;
+}
+.check strong {
   color: var(--heading);
 }
-.tool-card .tag {
-  align-self: flex-start;
-  font-family: var(--font-mono);
-  font-size: var(--step--1);
-  color: var(--muted);
+
+/* Segmented control: a row of radio buttons or tabs. */
+.segmented {
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
   border: 1px solid var(--border);
-  padding: 0.1em 0.5em;
+  background: var(--bg);
 }
-.tool-card[aria-disabled="true"] {
-  opacity: 0.5;
-  pointer-events: none;
+.segmented label,
+.segmented .tab {
+  position: relative;
+  cursor: pointer;
+}
+.segmented > * + * {
+  border-left: 1px solid var(--border);
+}
+.segmented > :first-child {
+  border-left: 0;
+}
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.segmented span,
+.segmented .tab {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 0 0.3em;
+  line-height: calc(var(--control-h) - 2px);
+  font-size: var(--step--2);
+  font-weight: 550;
+  color: var(--muted);
+  background: transparent;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  transition:
+    background var(--ease),
+    color var(--ease);
+}
+.segmented label:hover span,
+.segmented .tab:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+.segmented input:checked + span,
+.segmented .tab[aria-selected="true"] {
+  color: var(--accent-fg);
+  background: var(--accent);
+}
+.segmented input:focus-visible + span {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+/* Buttons. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  height: var(--control-h);
+  padding: 0 0.8em;
+  font-size: var(--step--2);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    background var(--ease),
+    border-color var(--ease),
+    color var(--ease);
+}
+.btn:hover {
+  border-color: var(--muted);
+  background: var(--surface-2);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+.btn-primary:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: var(--accent-fg);
+}
+.btn kbd {
+  font-size: 0.9em;
+  opacity: 0.7;
+  border: 1px solid currentColor;
+  padding: 0 0.3em;
+  line-height: 1.3;
+}
+.btn-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
+  gap: var(--s-2);
+}
+.btn-row[hidden] {
+  display: none;
+}
+@media (pointer: coarse) {
+  .btn {
+    height: 2.25rem;
+  }
+}
+
+/* Stage ------------------------------------------------------------------ */
+
+/* Where the output lives: a dotted drafting surface that fills the window. */
+.stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--border) 1px, transparent 1.2px);
+  background-size: 1rem 1rem;
+  background-position: 0.5rem 0.5rem;
+}
+.stage-center {
+  display: grid;
+  place-items: center;
+  padding: var(--s-5);
+}
+@media (max-width: 51.99rem) {
+  .stage {
+    min-height: 60dvh;
+  }
+}
+/* A small mono readout pinned to a corner of the stage. */
+.readout {
+  position: absolute;
+  top: var(--s-2);
+  left: var(--s-2);
+  z-index: 1;
+  max-width: calc(100% - 1rem);
+  padding: 0.15em 0.5em;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.readout:empty {
+  display: none;
+}
+.empty-hint {
+  justify-self: center;
+  align-self: center;
+  width: max-content;
+  max-width: calc(100% - 2rem);
+  height: max-content;
+  padding: 0.2em 0.6em;
+  background: var(--bg);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--muted);
+  text-align: center;
+}
+
+/* Status bar --------------------------------------------------------------- */
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  min-height: var(--status-h);
+  padding-inline: var(--s-3);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--muted);
+}
+.statusbar .status {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.statusbar .end {
+  margin-left: auto;
+  display: flex;
+  gap: var(--s-3);
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.statusbar a {
+  color: var(--muted);
+}
+.statusbar a:hover {
+  color: var(--text);
+}
+/* "Nothing leaves this machine" as a status light, not a promise paragraph. */
+.local::before {
+  content: "";
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin-right: 0.45em;
+  background: var(--accent);
+  vertical-align: 0.05em;
+}
+@media (max-width: 40rem) {
+  .statusbar {
+    flex-wrap: wrap;
+    gap: 0 var(--s-3);
+    padding-block: var(--s-1);
+  }
+  .statusbar .status {
+    white-space: normal;
+    flex-basis: 100%;
+  }
+  .statusbar .end {
+    margin-left: 0;
+  }
+}
+
+.status {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--muted);
+  max-width: none;
+}
+.status[data-kind="error"] {
+  color: var(--danger);
+}
+.status[data-kind="done"] {
+  color: var(--accent);
 }
 
 /* Dropzone. */
 .dropzone {
   display: grid;
   place-items: center;
-  gap: var(--s-3);
+  gap: var(--s-1);
   text-align: center;
-  padding: var(--s-7) var(--s-4);
-  border: 2px dashed var(--border);
-  background: var(--surface);
+  padding: var(--s-5) var(--s-3);
+  border: 1px dashed var(--muted);
+  background: var(--bg);
   color: var(--muted);
+  font-size: var(--step--2);
   cursor: pointer;
   transition:
     border-color var(--ease),
@@ -126,7 +638,8 @@
     color var(--ease);
 }
 .dropzone:hover {
-  border-color: var(--muted);
+  border-color: var(--accent);
+  color: var(--text);
 }
 .dropzone.dragover {
   border-color: var(--accent);
@@ -136,24 +649,28 @@
 }
 .dropzone strong {
   color: var(--heading);
-  font-size: var(--step-1);
-}
-
-/* Status line. */
-.status {
-  font-family: var(--font-mono);
   font-size: var(--step--1);
-  color: var(--muted);
 }
-.status[data-kind="error"] {
-  color: var(--danger);
+.dropzone .glyph {
+  font-family: var(--font-mono);
+  font-size: var(--step-1);
+  color: var(--accent);
+  line-height: 1;
+  transition: transform var(--ease);
+}
+.dropzone:hover .glyph,
+.dropzone.dragover .glyph {
+  transform: translateY(3px);
 }
 
 /* Progress bar. */
 .progress {
-  height: 4px;
+  height: 3px;
   background: var(--surface-2);
   overflow: hidden;
+}
+.progress[hidden] {
+  display: none;
 }
 .progress-bar {
   height: 100%;
@@ -180,44 +697,36 @@
     animation: none;
     width: 100%;
   }
+  .brand .dot,
+  .theme-toggle,
+  .dropzone .glyph {
+    transition: none;
+  }
 }
 
-/* `.toolbar` sets display:flex, which would otherwise override the `hidden`
-   attribute's UA display:none. Re-assert it when hidden. */
-.toolbar[hidden] {
-  display: none;
-}
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--s-3);
-  justify-content: space-between;
-  border-block: 1px solid var(--border);
-  padding-block: var(--s-3);
-}
-.toolbar .summary {
-  font-size: var(--step--1);
-}
-.toolbar .actions {
-  display: flex;
+/* Asset gallery (PDF extractor). */
+.gallery {
+  display: grid;
   gap: var(--s-2);
+  padding: var(--s-3);
+  grid-template-columns: repeat(auto-fill, minmax(min(11rem, 100%), 1fr));
+  align-content: start;
 }
-
-/* Asset gallery. */
 .asset {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border);
   background: var(--surface);
+  transition: border-color var(--ease);
+}
+.asset:hover {
+  border-color: var(--muted);
 }
 .asset .thumb {
   display: grid;
   place-items: center;
   aspect-ratio: 4 / 3;
-  background:
-    repeating-conic-gradient(var(--surface-2) 0 25%, transparent 0 50%) 50% / 16px
-    16px;
+  background: repeating-conic-gradient(var(--surface-2) 0 25%, transparent 0 50%) 50% / 12px 12px;
   overflow: hidden;
 }
 .asset .thumb img {
@@ -226,7 +735,7 @@
   object-fit: contain;
 }
 .asset .thumb.font {
-  font-size: clamp(2rem, 8vw, 3.5rem);
+  font-size: clamp(2rem, 6vw, 3rem);
   color: var(--heading);
   line-height: 1;
   padding: var(--s-3);
@@ -237,25 +746,144 @@
 .asset .meta {
   display: flex;
   flex-direction: column;
-  gap: var(--s-1);
-  padding: var(--s-3);
+  gap: 2px;
+  padding: var(--s-2);
   border-top: 1px solid var(--border);
   flex: 1; /* fill the card so the button can sink to the bottom */
 }
 .asset .meta .name {
   font-family: var(--font-mono);
-  font-size: var(--step--1);
+  font-size: var(--step--2);
   color: var(--heading);
   word-break: break-all;
 }
 .asset .meta .detail {
-  font-size: var(--step--1);
+  font-size: var(--step--2);
   color: var(--muted);
 }
 .asset .meta .btn {
   /* push to the bottom so buttons align across cards regardless of how many
      lines the name/detail wrap to; keeps a minimum gap above. */
   margin-top: auto;
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
+  translate: 0 var(--s-1);
+  margin-bottom: var(--s-1);
+}
+
+/* Landing page --------------------------------------------------------------- */
+
+/* The landing page is a document, so it scrolls like one. */
+.app.home {
+  height: auto;
+  overflow: visible;
+}
+
+.launcher {
+  width: 100%;
+  max-width: 60rem;
+  margin-inline: auto;
+  padding: var(--s-5) var(--s-3) var(--s-6);
+}
+.launcher-intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2) var(--s-4);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--border);
+}
+.launcher-intro h1 {
+  font-size: var(--step-1);
+}
+.launcher-intro p {
+  color: var(--muted);
+  font-size: var(--step--2);
+  font-family: var(--font-mono);
+}
+.tool-list {
+  list-style: none;
+  padding: 0;
+}
+.tool-row {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(9rem, 14rem) minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-2);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  transition:
+    background var(--ease),
+    padding var(--ease);
+}
+a.tool-row:hover {
+  background: var(--surface);
+  text-decoration: none;
+  color: var(--text);
+}
+.tool-row .n {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--muted);
+}
+a.tool-row:hover .n {
+  color: var(--accent);
+}
+.tool-row h2 {
+  font-size: var(--step-0);
+  font-weight: 600;
+}
+.tool-row .desc {
+  color: var(--muted);
+  font-size: var(--step--1);
+}
+.tool-row .tag {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--muted);
+}
+.tool-row .go {
+  font-family: var(--font-mono);
+  color: var(--muted);
+  transition:
+    transform var(--ease),
+    color var(--ease);
+}
+a.tool-row:hover .go {
+  color: var(--accent);
+  transform: translateX(4px);
+}
+.tool-row.soon {
+  opacity: 0.5;
+}
+@media (max-width: 40rem) {
+  .tool-row {
+    grid-template-columns: 2rem minmax(0, 1fr) auto;
+  }
+  .tool-row .desc {
+    grid-column: 2 / 3;
+  }
+  .tool-row .go {
+    grid-row: 1;
+    grid-column: 3;
+  }
+}
+@media (pointer: coarse) {
+  .btn kbd {
+    display: none;
+  }
+}
+
+/* Placeholder shown on an empty stage. */
+.stage-empty {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  pointer-events: none;
+}
+.gallery:not(:empty) ~ .stage-empty,
+.stage-fill:not([hidden]) ~ .stage-empty {
+  display: none;
 }
