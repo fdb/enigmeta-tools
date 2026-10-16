@@ -9,7 +9,7 @@ import { ALGORITHMS, generate } from "../generate";
 import type { Algorithm, Entrance } from "../generate";
 import { renderSvg } from "../svg";
 import { applyStorage } from "../storage";
-import type { Storage } from "../storage";
+import type { Placement, Storage } from "../storage";
 import { buildModel } from "../solid";
 import { encodeStl, triangulate } from "../stl";
 import { encodeStep } from "../step";
@@ -70,11 +70,24 @@ for (const kind of kinds) {
     }
   }
   const plain = generate(grid, { algorithm: "backtracker", bias: 1, braid: 0, entrance: "longest", seed: "x" });
-  for (const st of ["none", "closed", "pocket", "hook"] as Storage[]) {
-    const m = applyStorage(plain, { storage: st, ball: 3, wall: 1.2 });
-    const tag = `${kind}/${st}`;
-    if (st === "closed") check(`${tag} door closed`, !m.open[m.doors[0]]);
-    if (st === "pocket" || st === "hook") check(`${tag} has alcove`, m.extra.length >= (st === "pocket" ? 3 : 4));
+  const variants: [Storage, Placement][] = [["none", "start"]];
+  for (const st of ["closed", "pocket", "hook"] as Storage[])
+    for (const pl of ["start", "end", "both"] as Placement[]) variants.push([st, pl]);
+  for (const [st, pl] of variants) {
+    const m = applyStorage(plain, { storage: st, placement: pl, ball: 3, wall: 1.2 });
+    const tag = st === "none" ? `${kind}/none` : `${kind}/${st}-${pl}`;
+    const ends = pl === "both" ? [0, 1] : pl === "start" ? [0] : [1];
+    if (st === "closed")
+      check(
+        `${tag} doors closed`,
+        ends.every((e) => !m.open[m.doors[e]]),
+      );
+    if (st === "pocket" || st === "hook")
+      check(`${tag} has alcove`, m.extra.length >= ends.length * (st === "pocket" ? 3 : 5));
+    check(
+      `${tag} route`,
+      m.path.length === plain.path.length + { none: 0, closed: -1, pocket: 1, hook: 3 }[st] * ends.length,
+    );
     const svg = renderSvg(m, {
       wall: 1,
       margin: 2,
@@ -121,9 +134,9 @@ for (const kind of kinds) {
       const dxf = encodeDxf(m, 1.2);
       check(`${tag} dxf`, dxf.includes("WALLS") && dxf.trimEnd().endsWith("EOF") && !dxf.includes("NaN"));
       if (outDir) {
-        writeFileSync(`${outDir}/${kind}-${st}-base${base}.step`, step);
-        writeFileSync(`${outDir}/${kind}-${st}-base${base}.stl`, new Uint8Array(stl));
-        writeFileSync(`${outDir}/${kind}-${st}.dxf`, dxf);
+        writeFileSync(`${outDir}/${tag.replace("/", "-")}-base${base}.step`, step);
+        writeFileSync(`${outDir}/${tag.replace("/", "-")}-base${base}.stl`, new Uint8Array(stl));
+        writeFileSync(`${outDir}/${tag.replace("/", "-")}.dxf`, dxf);
       }
       console.log(
         `${kind} base=${base}: ${n} cells, ${model.bodies.length} bodies, ${tris.length} triangles, ${vol.toFixed(0)} mm³`,
