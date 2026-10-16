@@ -61,3 +61,9 @@
   padding: var(--s-3);
   word-break: break-all;
 }
+
+@media (max-width: 51.99rem) {
+  .kc .stage {
+    min-height: 16rem;
+  }
+}
