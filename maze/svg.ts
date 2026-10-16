@@ -81,7 +81,10 @@ export function renderSvg(maze: Maze, o: SvgOptions): string {
     } else {
       for (let j = 1; j < i0; j++) route += `L${P[j]}`;
     }
-    for (; i + 1 < P.length; i += 2) route += `Q${P[i]} ${P[i + 1]}`;
+    // Likewise after the last cell centre (the exit doorway, or an alcove beyond it).
+    const iN = maze.path.lastIndexOf(g.centers[maze.solution[maze.solution.length - 1]]);
+    for (; i <= iN && i + 1 < P.length; i += 2) route += `Q${P[i]} ${P[i + 1]}`;
+    for (; i < P.length; i++) route += `L${P[i]}`;
     parts.push(
       `<path d="${route}" fill="none" stroke="${o.route}" stroke-width="${fmt(sw)}" ` +
         `stroke-linecap="round" stroke-linejoin="round"/>`,

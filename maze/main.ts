@@ -8,7 +8,7 @@ import { buildGrid } from "./grid";
 import type { Grid, GridKind, GridSpec } from "./grid";
 import { ALGORITHMS, generate, mazeBounds } from "./generate";
 import { applyStorage, ballFits } from "./storage";
-import type { Storage } from "./storage";
+import type { Placement, Storage } from "./storage";
 import type { Algorithm, Entrance, Maze } from "./generate";
 import { renderSvg } from "./svg";
 
@@ -32,6 +32,7 @@ const braid = $<HTMLInputElement>("braid");
 const braidOut = $<HTMLOutputElement>("braid-out");
 const entrance = $<HTMLSelectElement>("entrance");
 const storage = $<HTMLSelectElement>("storage");
+const placement = $<HTMLSelectElement>("placement");
 const storageNote = $<HTMLParagraphElement>("storage-note");
 const ball = $<HTMLInputElement>("ball");
 const entranceCenter = $<HTMLOptionElement>("entrance-center");
@@ -102,10 +103,10 @@ let generated: Maze | null = null;
 let maze: Maze | null = null;
 
 const STORAGE_NOTES: Record<Storage, string> = {
-  none: "The entrance is an opening in the outer wall.",
-  closed: "The entrance is walled off; the ball rests in the first cell.",
+  none: "The entrance and exit are openings in the outer wall.",
+  closed: "The doorway is walled off; the ball rests in the cell behind it.",
   pocket: "The corridor carries on past the outer wall into a closed bay that holds the ball.",
-  hook: "An L-shaped bay: out through the entrance, then sideways, so the ball sits behind a wall.",
+  hook: "An L-shaped bay: out through the doorway, then sideways into a foot where the ball rests behind a notch.",
 };
 
 function syncControls() {
@@ -209,6 +210,7 @@ function update(regenerate: boolean) {
 
   maze = applyStorage(generated, {
     storage: storage.value as Storage,
+    placement: placement.value as Placement,
     ball: num(ball, 6),
     wall: num(wall, 1),
   });
@@ -234,9 +236,11 @@ function update(regenerate: boolean) {
   if (w >= num(cell, 8) * 0.6) footprint.textContent += " · walls nearly fill the cells";
   if (storage.value !== "none" && !ballFits(num(cell, 8), w, num(ball, 6)))
     footprint.textContent += " · the ball is too wide for the corridors";
+  placement.disabled = storage.value === "none";
   storageNote.textContent =
-    generated.doors[0] < 0 && storage.value !== "none"
-      ? "The route starts in the centre, so there is no entrance to store the ball at."
+    generated.doors[0] < 0 && storage.value !== "none" && placement.value !== "end"
+      ? "The route starts in the centre, so there is no entrance to store the ball at" +
+        (placement.value === "both" ? "; only the exit gets one." : ".")
       : STORAGE_NOTES[storage.value as Storage];
 
   saveState();
@@ -269,6 +273,7 @@ const STATE_FIELDS: (HTMLInputElement | HTMLSelectElement)[] = [
   braid,
   entrance,
   storage,
+  placement,
   ball,
   seed,
   cell,
@@ -319,9 +324,18 @@ form.addEventListener("input", (e) => {
   if (t === difficulty) applyDifficulty();
   if (t instanceof HTMLInputElement && t.name === "kind") applyDifficulty();
   // Display-only changes re-render without generating a new maze.
-  const displayOnly = [showSolution, heatmap, wall, height, base, baseMargin, baseOn, storage, ball].includes(
-    t as HTMLInputElement,
-  );
+  const displayOnly = [
+    showSolution,
+    heatmap,
+    wall,
+    height,
+    base,
+    baseMargin,
+    baseOn,
+    storage,
+    placement,
+    ball,
+  ].includes(t as HTMLInputElement);
   update(!displayOnly);
 });
 
