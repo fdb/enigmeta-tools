@@ -8,6 +8,8 @@ import type { GridKind } from "../grid";
 import { ALGORITHMS, generate } from "../generate";
 import type { Algorithm, Entrance } from "../generate";
 import { renderSvg } from "../svg";
+import { applyStorage } from "../storage";
+import type { Storage } from "../storage";
 import { buildModel } from "../solid";
 import { encodeStl, triangulate } from "../stl";
 import { encodeStep } from "../step";
@@ -56,58 +58,66 @@ for (const kind of kinds) {
       }
     }
   }
-  const m = generate(grid, { algorithm: "backtracker", bias: 1, braid: 0, entrance: "longest", seed: "x" });
-  const svg = renderSvg(m, {
-    wall: 1,
-    margin: 2,
-    solution: true,
-    heatmap: true,
-    ink: "#000",
-    route: "#c00",
-    paper: "#fff",
-  });
-  check(`${kind} svg`, svg.startsWith("<svg") && svg.endsWith("</svg>") && !svg.includes("NaN"));
+  const plain = generate(grid, { algorithm: "backtracker", bias: 1, braid: 0, entrance: "longest", seed: "x" });
+  for (const st of ["none", "closed", "pocket", "hook"] as Storage[]) {
+    const m = applyStorage(plain, { storage: st, ball: 3, wall: 1.2 });
+    const tag = `${kind}/${st}`;
+    if (st === "closed") check(`${tag} door closed`, !m.open[m.doors[0]]);
+    if (st === "pocket" || st === "hook") check(`${tag} has alcove`, m.extra.length >= (st === "pocket" ? 3 : 4));
+    const svg = renderSvg(m, {
+      wall: 1,
+      margin: 2,
+      solution: true,
+      heatmap: true,
+      ink: "#000",
+      route: "#c00",
+      paper: "#fff",
+    });
+    check(`${tag} svg`, svg.startsWith("<svg") && svg.endsWith("</svg>") && !svg.includes("NaN"));
 
-  // Solid: every body watertight (each directed triangle edge matched by its
-  // reverse exactly once) with positive volume; STL and STEP well-formed.
-  for (const base of [0, 2]) {
-    const model = buildModel(m, { wall: 1.2, height: 8, base, margin: 3 });
-    const tris = triangulate(model);
-    const edges = new Map<string, number>();
-    const key = (a: number[], b: number[]) => `${a.join()}|${b.join()}`;
-    let vol = 0;
-    for (const [a, b, c] of tris) {
-      for (const [p, q] of [
-        [a, b],
-        [b, c],
-        [c, a],
-      ])
-        edges.set(key(p, q), (edges.get(key(p, q)) ?? 0) + 1);
-      vol +=
-        (a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0])) /
-        6;
+    // Solid: every body watertight (each directed triangle edge matched by its
+    // reverse exactly once) with positive volume; STL and STEP well-formed.
+    for (const base of [0, 2]) {
+      const model = buildModel(m, { wall: 1.2, height: 8, base, margin: 3 });
+      const tris = triangulate(model);
+      const edges = new Map<string, number>();
+      const key = (a: number[], b: number[]) => `${a.join()}|${b.join()}`;
+      let vol = 0;
+      for (const [a, b, c] of tris) {
+        for (const [p, q] of [
+          [a, b],
+          [b, c],
+          [c, a],
+        ])
+          edges.set(key(p, q), (edges.get(key(p, q)) ?? 0) + 1);
+        vol +=
+          (a[0] * (b[1] * c[2] - b[2] * c[1]) -
+            a[1] * (b[0] * c[2] - b[2] * c[0]) +
+            a[2] * (b[0] * c[1] - b[1] * c[0])) /
+          6;
+      }
+      let unmatched = 0;
+      for (const [k, n] of edges) {
+        const [p, q] = k.split("|");
+        if (n !== 1 || edges.get(`${q}|${p}`) !== 1) unmatched++;
+      }
+      check(`${tag} base=${base} watertight`, unmatched === 0, `${unmatched} unmatched edges`);
+      check(`${tag} base=${base} volume`, vol > 0, `vol=${vol}`);
+      const stl = encodeStl(model);
+      check(`${tag} stl size`, stl.byteLength === 84 + 50 * tris.length);
+      const step = encodeStep(model, `maze-${kind}`);
+      check(`${tag} step`, step.startsWith("ISO-10303-21;") && !step.includes("NaN"));
+      const dxf = encodeDxf(m, 1.2);
+      check(`${tag} dxf`, dxf.includes("WALLS") && dxf.trimEnd().endsWith("EOF") && !dxf.includes("NaN"));
+      if (outDir) {
+        writeFileSync(`${outDir}/${kind}-${st}-base${base}.step`, step);
+        writeFileSync(`${outDir}/${kind}-${st}-base${base}.stl`, new Uint8Array(stl));
+        writeFileSync(`${outDir}/${kind}-${st}.dxf`, dxf);
+      }
+      console.log(
+        `${kind} base=${base}: ${n} cells, ${model.bodies.length} bodies, ${tris.length} triangles, ${vol.toFixed(0)} mm³`,
+      );
     }
-    let unmatched = 0;
-    for (const [k, n] of edges) {
-      const [p, q] = k.split("|");
-      if (n !== 1 || edges.get(`${q}|${p}`) !== 1) unmatched++;
-    }
-    check(`${kind} base=${base} watertight`, unmatched === 0, `${unmatched} unmatched edges`);
-    check(`${kind} base=${base} volume`, vol > 0, `vol=${vol}`);
-    const stl = encodeStl(model);
-    check(`${kind} stl size`, stl.byteLength === 84 + 50 * tris.length);
-    const step = encodeStep(model, `maze-${kind}`);
-    check(`${kind} step`, step.startsWith("ISO-10303-21;") && !step.includes("NaN"));
-    const dxf = encodeDxf(m, 1.2);
-    check(`${kind} dxf`, dxf.includes("WALLS") && dxf.trimEnd().endsWith("EOF") && !dxf.includes("NaN"));
-    if (outDir) {
-      writeFileSync(`${outDir}/${kind}-base${base}.step`, step);
-      writeFileSync(`${outDir}/${kind}-base${base}.stl`, new Uint8Array(stl));
-      writeFileSync(`${outDir}/${kind}.dxf`, dxf);
-    }
-    console.log(
-      `${kind} base=${base}: ${n} cells, ${model.bodies.length} bodies, ${tris.length} triangles, ${vol.toFixed(0)} mm³`,
-    );
   }
 }
 

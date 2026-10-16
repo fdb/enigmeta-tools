@@ -6,6 +6,7 @@
 //   SOLUTION     the route from entrance to exit
 
 import type { Maze } from "./generate";
+import { mazeBounds, standingWalls } from "./generate";
 import type { Point } from "./grid";
 import { wallEndpoints } from "./grid";
 import { toModel, wallFootprint } from "./footprint";
@@ -17,7 +18,9 @@ export function encodeDxf(maze: Maze, wall: number): string {
     out.push(String(code), typeof value === "number" ? num(value) : value);
   };
   const flip = toModel(maze);
-  const { minX, minY, maxX, maxY } = maze.grid.bounds;
+  const b = mazeBounds(maze);
+  const lo = flip({ x: b.minX, y: b.maxY });
+  const hi = flip({ x: b.maxX, y: b.minY });
   const pad = wall / 2;
 
   g(0, "SECTION");
@@ -25,11 +28,11 @@ export function encodeDxf(maze: Maze, wall: number): string {
   g(9, "$ACADVER");
   g(1, "AC1009");
   g(9, "$EXTMIN");
-  g(10, minX - pad);
-  g(20, minY - pad);
+  g(10, lo.x - pad);
+  g(20, lo.y - pad);
   g(9, "$EXTMAX");
-  g(10, maxX + pad);
-  g(20, maxY + pad);
+  g(10, hi.x + pad);
+  g(20, hi.y + pad);
   g(0, "ENDSEC");
 
   g(0, "SECTION");
@@ -63,9 +66,7 @@ export function encodeDxf(maze: Maze, wall: number): string {
   };
   wallFootprint(maze, wall).forEach(shape);
 
-  maze.grid.walls.forEach((w, i) => {
-    if (maze.open[i]) return;
-    const geom = w.geom;
+  standingWalls(maze).forEach((geom) => {
     if (geom.kind === "line") {
       const [p, q] = wallEndpoints(geom).map(flip);
       g(0, "LINE");

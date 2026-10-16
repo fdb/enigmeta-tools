@@ -2,7 +2,7 @@
 // exactly one route between any two cells), optionally add loops, pick the
 // entrance and exit, and solve it.
 
-import type { Grid, Point } from "./grid";
+import type { Grid, Line, Point, WallGeom } from "./grid";
 import { wallMidpoint } from "./grid";
 
 export type Algorithm = "backtracker" | "growing" | "prim" | "kruskal" | "wilson" | "hunt";
@@ -61,6 +61,26 @@ export interface Maze {
   /** Steps from the start to every cell. */
   distance: number[];
   deadEnds: number;
+  /** Walls outside the grid, such as a ball storage alcove. */
+  extra: Line[];
+}
+
+/** Every wall still standing: closed grid walls plus any extras. */
+export function standingWalls(maze: Maze): WallGeom[] {
+  const out: WallGeom[] = maze.grid.walls.filter((_, i) => !maze.open[i]).map((w) => w.geom);
+  return out.concat(maze.extra);
+}
+
+/** Bounds of the grid and any extra walls (centre lines, in SVG coordinates). */
+export function mazeBounds(maze: Maze) {
+  let { minX, minY, maxX, maxY } = maze.grid.bounds;
+  for (const l of maze.extra) {
+    minX = Math.min(minX, l.x1, l.x2);
+    maxX = Math.max(maxX, l.x1, l.x2);
+    minY = Math.min(minY, l.y1, l.y2);
+    maxY = Math.max(maxY, l.y1, l.y2);
+  }
+  return { minX, minY, maxX, maxY };
 }
 
 // Seeded RNG ----------------------------------------------------------------
@@ -349,5 +369,5 @@ export function generate(g: Grid, opts: MazeOptions): Maze {
     if (c !== start && c !== end && openLinks(g, open, c).length === 1) deadEnds++;
   }
 
-  return { grid: g, open, start, end, doors, solution, path, distance: dist, deadEnds };
+  return { grid: g, open, start, end, doors, solution, path, distance: dist, deadEnds, extra: [] };
 }

@@ -13,6 +13,7 @@ declare module "clipper-lib" {
   export class PolyTree extends PolyNode {}
   export class Clipper {
     StrictlySimple: boolean;
+    PreserveCollinear: boolean;
     AddPaths(paths: Path[], polyType: number, closed: boolean): boolean;
     Execute(clipType: number, solution: PolyTree, subjFill: number, clipFill: number): boolean;
     static CleanPolygon(path: Path, distance?: number): Path;
@@ -20,9 +21,9 @@ declare module "clipper-lib" {
   const ClipperLib: {
     Clipper: typeof Clipper;
     PolyTree: typeof PolyTree;
-    ClipType: { ctUnion: number };
-    PolyType: { ptSubject: number };
-    PolyFillType: { pftNonZero: number };
+    ClipType: { ctUnion: number; ctIntersection: number };
+    PolyType: { ptSubject: number; ptClip: number };
+    PolyFillType: { pftNonZero: number; pftEvenOdd: number };
   };
   export default ClipperLib;
 }

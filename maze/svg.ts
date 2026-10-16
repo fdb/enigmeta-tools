@@ -1,6 +1,7 @@
 // SVG rendering of a maze, sized in millimetres so it prints or cuts to scale.
 
 import type { Maze } from "./generate";
+import { mazeBounds, standingWalls } from "./generate";
 import type { WallGeom } from "./grid";
 import { fmt, wallEndpoints } from "./grid";
 
@@ -38,7 +39,7 @@ export function wallPath(g: WallGeom): string {
 
 export function renderSvg(maze: Maze, o: SvgOptions): string {
   const g = maze.grid;
-  const { minX, minY, maxX, maxY } = g.bounds;
+  const { minX, minY, maxX, maxY } = mazeBounds(maze);
   const pad = o.margin + o.wall / 2;
   const x0 = minX - pad;
   const y0 = minY - pad;
@@ -70,11 +71,15 @@ export function renderSvg(maze: Maze, o: SvgOptions): string {
     // The path alternates wall midpoints and cell centres; curve through the
     // midpoints using each centre as the control point, so turns are rounded.
     const P = maze.path.map((p) => `${fmt(p.x)} ${fmt(p.y)}`);
+    // Points before the first cell centre (a doorway, a storage alcove) are joined straight.
+    const i0 = maze.path.indexOf(g.centers[maze.solution[0]]);
     let route = `M${P[0]}`;
-    let i = 1;
-    if (maze.doors[0] < 0) {
+    let i = i0;
+    if (i0 <= 0) {
       route += `L${P[1]}`;
       i = 2;
+    } else {
+      for (let j = 1; j < i0; j++) route += `L${P[j]}`;
     }
     for (; i + 1 < P.length; i += 2) route += `Q${P[i]} ${P[i + 1]}`;
     parts.push(
@@ -83,10 +88,7 @@ export function renderSvg(maze: Maze, o: SvgOptions): string {
     );
   }
 
-  const d = g.walls
-    .map((wall, i) => (maze.open[i] ? "" : wallPath(wall.geom)))
-    .filter(Boolean)
-    .join("");
+  const d = standingWalls(maze).map(wallPath).join("");
   parts.push(
     `<path d="${d}" fill="none" stroke="${o.ink}" stroke-width="${fmt(o.wall)}" ` +
       `stroke-linecap="${cap}" stroke-linejoin="${cap === "square" ? "miter" : "round"}"/>`,
