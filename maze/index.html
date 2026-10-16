@@ -15,13 +15,13 @@
     <link rel="stylesheet" href="/src/styles/site.css" />
     <link rel="stylesheet" href="/maze/style.css" />
   </head>
-  <body>
-    <header class="site-header">
-      <div class="wrap">
-        <a class="brand" href="/">
-          tools<span class="dot">.</span>enigmeta<span class="dot">.</span>com
-          <span class="crumb">/ maze</span>
-        </a>
+  <body class="app">
+    <header class="bar">
+      <a class="brand" href="/">
+        tools<span class="dot">.</span>enigmeta<span class="dot">.</span>com<span class="crumb">/maze</span>
+      </a>
+      <p class="bar-desc">Solvable mazes, exported in millimetres to SVG, DXF, STEP or STL.</p>
+      <div class="bar-end">
         <button
           class="theme-toggle"
           data-theme-toggle
@@ -29,193 +29,185 @@
           aria-label="Toggle dark mode"
           title="Toggle dark mode"
         >
-          ◐
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5" />
+            <path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor" />
+          </svg>
         </button>
       </div>
     </header>
 
-    <section class="hero">
-      <div class="wrap stack">
-        <h1>Maze generator</h1>
-        <p>
-          Square, round, hexagonal and triangular mazes. Every maze is solvable, and by default it is
-          <em>perfect</em>: exactly one route between any two points. Export SVG to print, plot or laser-cut, DXF or
-          STEP for CAD, or STL to 3D-print, all in millimetres at the size you set.
-        </p>
-      </div>
-    </section>
+    <main class="workspace stage-first">
+      <form class="panel" id="controls" autocomplete="off">
+        <fieldset class="section">
+          <legend class="section-head"><span class="n">01</span> Shape</legend>
+          <div class="segmented" role="radiogroup" aria-label="Shape">
+            <label><input type="radio" name="kind" value="square" checked /><span>Square</span></label>
+            <label><input type="radio" name="kind" value="round" /><span>Round</span></label>
+            <label><input type="radio" name="kind" value="hex" /><span>Hexagon</span></label>
+            <label><input type="radio" name="kind" value="triangle" /><span>Triangle</span></label>
+          </div>
+          <div class="prop range" title="Sets the columns and rows below">
+            <label for="difficulty">Difficulty</label>
+            <input type="range" id="difficulty" min="1" max="10" step="1" value="5" />
+            <output id="difficulty-out" for="difficulty">5</output>
+          </div>
+          <div class="prop" id="cols-field">
+            <label for="cols">Columns</label>
+            <input type="number" id="cols" min="2" max="150" step="1" value="20" />
+          </div>
+          <div class="prop">
+            <label for="rows" id="rows-label">Rows</label>
+            <input type="number" id="rows" min="2" max="150" step="1" value="20" />
+          </div>
+        </fieldset>
 
-    <main class="site-main">
-      <div class="wrap maze-layout">
-        <form class="controls" id="controls" autocomplete="off">
-          <fieldset class="params">
-            <legend>Maze</legend>
-
-            <div class="segmented" role="radiogroup" aria-label="Shape">
-              <label><input type="radio" name="kind" value="square" checked /><span>Square</span></label>
-              <label><input type="radio" name="kind" value="round" /><span>Round</span></label>
-              <label><input type="radio" name="kind" value="hex" /><span>Hexagon</span></label>
-              <label><input type="radio" name="kind" value="triangle" /><span>Triangle</span></label>
+        <fieldset class="section">
+          <legend class="section-head"><span class="n">02</span> Generator</legend>
+          <div class="prop">
+            <label for="algorithm">Algorithm</label>
+            <select id="algorithm"></select>
+          </div>
+          <p class="hint" id="algorithm-note"></p>
+          <div class="prop range" id="bias-field" hidden title="0 is branchy, 100 is long corridors">
+            <label for="bias">Bias</label>
+            <input type="range" id="bias" min="0" max="100" step="5" value="50" />
+            <output id="bias-out" for="bias">50</output>
+          </div>
+          <div class="prop range" title="Share of dead ends opened up. Above 0 there is more than one route.">
+            <label for="braid">Loops %</label>
+            <input type="range" id="braid" min="0" max="100" step="5" value="0" />
+            <output id="braid-out" for="braid">0</output>
+          </div>
+          <div class="prop">
+            <label for="entrance">Entrance</label>
+            <select id="entrance">
+              <option value="corners">Opposite corners</option>
+              <option value="longest">Longest route, edge to edge</option>
+              <option value="center" id="entrance-center">Centre to edge</option>
+            </select>
+          </div>
+          <div class="prop">
+            <label for="seed">Seed</label>
+            <div class="seed-row">
+              <input type="text" id="seed" class="mono" spellcheck="false" />
+              <button type="button" class="btn btn-primary" id="new-maze" title="New maze (N)">
+                Shuffle <kbd>N</kbd>
+              </button>
             </div>
+          </div>
+        </fieldset>
 
-            <div class="param">
-              <label for="difficulty">
-                Difficulty <output class="mono" id="difficulty-out">5</output> / 10
-                <span class="muted small">— sets the size below</span>
-              </label>
-              <input type="range" id="difficulty" min="1" max="10" step="1" value="5" />
-            </div>
+        <fieldset class="section">
+          <legend class="section-head"><span class="n">03</span> View</legend>
+          <label class="check"><input type="checkbox" id="show-solution" /><span>Show solution</span></label>
+          <label class="check">
+            <input type="checkbox" id="heatmap" /><span>Colour by distance from the entrance</span>
+          </label>
+        </fieldset>
 
-            <div class="row">
-              <label class="num" id="cols-field">
-                <span>Columns</span>
-                <input type="number" id="cols" min="2" max="150" step="1" value="20" />
-              </label>
-              <label class="num">
-                <span id="rows-label">Rows</span>
-                <input type="number" id="rows" min="2" max="150" step="1" value="20" />
-              </label>
-            </div>
+        <fieldset class="section">
+          <legend class="section-head"><span class="n">04</span> Ball storage</legend>
+          <div class="prop">
+            <label for="storage">At entrance</label>
+            <select id="storage">
+              <option value="none">None</option>
+              <option value="closed">Closed entrance</option>
+              <option value="pocket">Pocket</option>
+              <option value="hook">L-shaped bay</option>
+            </select>
+          </div>
+          <div class="prop">
+            <label for="ball">Ball ⌀ mm</label>
+            <input type="number" id="ball" min="1" max="100" step="0.5" value="6" />
+          </div>
+          <p class="hint" id="storage-note"></p>
+        </fieldset>
 
-            <label class="num">
-              <span>Algorithm</span>
-              <select id="algorithm"></select>
-            </label>
-            <p class="muted small" id="algorithm-note"></p>
-
-            <div class="param" id="bias-field" hidden>
-              <label for="bias">
-                Bias <output class="mono" id="bias-out">50</output>%
-                <span class="muted small">— 0 branchy, 100 long corridors</span>
-              </label>
-              <input type="range" id="bias" min="0" max="100" step="5" value="50" />
-            </div>
-
-            <div class="param">
-              <label for="braid">
-                Loops <output class="mono" id="braid-out">0</output>%
-                <span class="muted small">— share of dead ends opened up; above 0 there is more than one route</span>
-              </label>
-              <input type="range" id="braid" min="0" max="100" step="5" value="0" />
-            </div>
-
-            <label class="num">
-              <span>Entrance and exit</span>
-              <select id="entrance">
-                <option value="corners">Opposite corners</option>
-                <option value="longest">Longest route, edge to edge</option>
-                <option value="center" id="entrance-center">Centre to edge</option>
-              </select>
-            </label>
-
-            <label class="num">
-              <span>Ball storage at the entrance</span>
-              <select id="storage">
-                <option value="none">None</option>
-                <option value="closed">Closed entrance</option>
-                <option value="pocket">Pocket</option>
-                <option value="hook">L-shaped bay</option>
-              </select>
-            </label>
-            <p class="muted small" id="storage-note"></p>
-
-            <div class="row seed-row">
-              <label class="num">
-                <span>Seed</span>
-                <input type="text" id="seed" class="mono" spellcheck="false" />
-              </label>
-              <button type="button" class="btn btn-primary" id="new-maze">New maze</button>
-            </div>
-
-            <label class="check"><input type="checkbox" id="show-solution" /><span>Show solution</span></label>
-            <label class="check">
-              <input type="checkbox" id="heatmap" /><span>Colour by distance from the entrance</span>
-            </label>
-          </fieldset>
-
-          <fieldset class="params">
-            <legend>Dimensions <span class="muted small">— millimetres, for every export</span></legend>
-            <div class="row">
-              <label class="num">
-                <span>Maze width</span>
-                <input type="number" id="width" min="5" max="5000" step="1" value="160" />
-              </label>
-              <label class="num">
-                <span id="cell-label">Cell size</span>
-                <input type="number" id="cell" min="1" max="100" step="0.5" value="8" />
-              </label>
-              <label class="num">
-                <span>Wall width</span>
-                <input type="number" id="wall" min="0.1" max="20" step="0.1" value="1.2" />
-              </label>
-              <label class="num">
-                <span>Ball diameter</span>
-                <input type="number" id="ball" min="1" max="100" step="0.5" value="6" />
-              </label>
-            </div>
-            <p class="muted small mono" id="footprint"></p>
-            <p class="muted small">
+        <fieldset class="section">
+          <legend class="section-head"><span class="n">05</span> Dimensions <span class="aside">mm</span></legend>
+          <div class="prop">
+            <label for="width">Maze width</label>
+            <input type="number" id="width" min="5" max="5000" step="1" value="160" />
+          </div>
+          <div class="prop">
+            <label for="cell" id="cell-label">Cell size</label>
+            <input type="number" id="cell" min="1" max="100" step="0.5" value="8" />
+          </div>
+          <div class="prop">
+            <label for="wall">Wall width</label>
+            <input type="number" id="wall" min="0.1" max="20" step="0.1" value="1.2" />
+          </div>
+          <details class="help">
+            <summary>How width and cell size relate</summary>
+            <p>
               Width is measured across the outer walls. Set the width and the cell size follows, or set the cell size
               and the width follows; whichever you set last is kept when the grid changes.
             </p>
-          </fieldset>
+          </details>
+        </fieldset>
 
-          <fieldset class="params">
-            <legend>Export</legend>
-            <h3 class="sub">2D</h3>
-            <div class="actions">
-              <button type="button" class="btn btn-primary" id="download-svg">Download SVG</button>
-              <button type="button" class="btn btn-primary" id="download-dxf">Download DXF</button>
-            </div>
-            <p class="muted small">
+        <fieldset class="section">
+          <legend class="section-head"><span class="n">06</span> Export 2D</legend>
+          <div class="btn-row">
+            <button type="button" class="btn btn-primary" id="download-svg">↓ SVG</button>
+            <button type="button" class="btn btn-primary" id="download-dxf">↓ DXF</button>
+          </div>
+          <details class="help">
+            <summary>About SVG and DXF</summary>
+            <p>
               <strong>SVG</strong> for printing, plotting and laser cutting; it includes the solution and colouring only
               if they are shown. <strong>DXF</strong> for CAD (Inventor: Sketch › Insert AutoCAD file, units mm): layer
               <code>WALLS</code> has closed wall outlines ready to extrude, <code>CENTERLINES</code> the wall centre
               lines and <code>SOLUTION</code> the route.
             </p>
+          </details>
+        </fieldset>
 
-            <h3 class="sub">3D</h3>
-            <div class="row">
-              <label class="num">
-                <span>Wall height</span>
-                <input type="number" id="height" min="0.2" max="200" step="0.2" value="6" />
-              </label>
-            </div>
-            <label class="check"><input type="checkbox" id="base-on" checked /><span>Ground plane</span></label>
-            <div class="row" id="base-fields">
-              <label class="num">
-                <span>Thickness</span>
-                <input type="number" id="base" min="0.2" max="50" step="0.2" value="1.6" />
-              </label>
-              <label class="num">
-                <span>Border</span>
-                <input type="number" id="base-margin" min="0" max="50" step="0.5" value="3" />
-              </label>
-            </div>
-            <div class="actions">
-              <button type="button" class="btn btn-primary" id="download-step">Download STEP</button>
-              <button type="button" class="btn btn-primary" id="download-stl">Download STL</button>
-            </div>
-            <p class="muted small">
+        <fieldset class="section">
+          <legend class="section-head"><span class="n">07</span> Export 3D <span class="aside">mm</span></legend>
+          <div class="prop">
+            <label for="height">Wall height</label>
+            <input type="number" id="height" min="0.2" max="200" step="0.2" value="6" />
+          </div>
+          <label class="check"><input type="checkbox" id="base-on" checked /><span>Ground plane</span></label>
+          <div class="pair" id="base-fields">
+            <label>
+              <span>Thickness</span>
+              <input type="number" id="base" min="0.2" max="50" step="0.2" value="1.6" />
+            </label>
+            <label>
+              <span>Border</span>
+              <input type="number" id="base-margin" min="0" max="50" step="0.5" value="3" />
+            </label>
+          </div>
+          <div class="btn-row">
+            <button type="button" class="btn btn-primary" id="download-step">↓ STEP</button>
+            <button type="button" class="btn btn-primary" id="download-stl">↓ STL</button>
+          </div>
+          <details class="help">
+            <summary>About STEP and STL</summary>
+            <p>
               <strong>STEP</strong> opens as a solid body in CAD (Inventor, Fusion, SolidWorks, FreeCAD).
               <strong>STL</strong> is a mesh for slicers. Both are watertight and in millimetres. With a ground plane
               (border above 0) the maze is one solid; without one, each connected run of walls is its own body.
             </p>
-          </fieldset>
-        </form>
+          </details>
+        </fieldset>
+      </form>
 
-        <section class="preview-col stack">
-          <p class="status" id="status" role="status" aria-live="polite"></p>
-          <div class="preview" id="preview"></div>
-        </section>
-      </div>
+      <section class="stage maze-stage" aria-label="Preview">
+        <p class="readout" id="footprint"></p>
+        <div class="sheet" id="preview"></div>
+      </section>
     </main>
 
-    <footer class="site-footer">
-      <div class="wrap">
-        <span>Generated in your browser. Nothing is uploaded.</span>
-        <span><a href="/">← all tools</a></span>
-      </div>
+    <footer class="statusbar">
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+      <span class="end">
+        <span class="local">generated here, nothing uploaded</span>
+        <a href="/">all tools</a>
+      </span>
     </footer>
 
     <script type="module" src="/maze/main.ts"></script>

@@ -27,6 +27,17 @@ function check(name: string, ok: boolean, detail = "") {
 }
 
 const kinds: GridKind[] = ["square", "round", "hex", "triangle"];
+
+// Fractional cell sizes (what the width field produces) must still connect
+// every cell to its neighbours, so a perfect maze spans the whole grid.
+for (const kind of ["square", "hex", "triangle"] as GridKind[]) {
+  for (const cell of [5.239, 7.218, 3.3333, 6.617]) {
+    const grid = buildGrid({ kind, cols: 17, rows: 17, cell });
+    const m = generate(grid, { algorithm: "backtracker", bias: 0.5, braid: 0, entrance: "corners", seed: "x" });
+    const interior = grid.walls.filter((w, i) => w.b >= 0 && m.open[i]).length;
+    check(`${kind}/cell=${cell} connected`, interior === grid.centers.length - 1, `${interior} open interior walls`);
+  }
+}
 const algos = Object.keys(ALGORITHMS) as Algorithm[];
 const entrances: Entrance[] = ["corners", "longest", "center"];
 

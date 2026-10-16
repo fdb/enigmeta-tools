@@ -14,10 +14,10 @@
     <link rel="stylesheet" href="/src/styles/base.css" />
     <link rel="stylesheet" href="/src/styles/site.css" />
   </head>
-  <body>
-    <header class="site-header">
-      <div class="wrap">
-        <a class="brand" href="/"> tools<span class="dot">.</span>enigmeta<span class="dot">.</span>com </a>
+  <body class="app home">
+    <header class="bar">
+      <a class="brand" href="/">tools<span class="dot">.</span>enigmeta<span class="dot">.</span>com</a>
+      <div class="bar-end">
         <button
           class="theme-toggle"
           data-theme-toggle
@@ -25,73 +25,92 @@
           aria-label="Toggle dark mode"
           title="Toggle dark mode"
         >
-          ◐
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5" />
+            <path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor" />
+          </svg>
         </button>
       </div>
     </header>
 
-    <section class="hero">
-      <div class="wrap stack">
+    <main class="launcher">
+      <div class="launcher-intro">
         <h1>Tools</h1>
-        <p>
-          A small collection of tools I use and maintain. Everything runs entirely in your browser — your files never
-          leave your machine. No uploads, no servers, no tracking.
-        </p>
+        <p>small, maintained, and they all run in your browser</p>
       </div>
-    </section>
 
-    <main class="site-main">
-      <div class="wrap">
-        <div class="grid">
-          <a class="tool-card" href="/pdf-extractor/">
-            <span class="tag">PDF · Rust/WASM</span>
-            <h3>PDF asset extractor</h3>
-            <p class="muted small">
-              Drop a PDF to pull out every embedded image and font. Download them individually or all at once as a ZIP.
+      <ul class="tool-list">
+        <li>
+          <a class="tool-row" href="/maze/">
+            <span class="n">01</span>
+            <div>
+              <h2>Maze generator</h2>
+              <span class="tag">SVG · DXF · STEP · STL</span>
+            </div>
+            <p class="desc">
+              Square, round, hexagonal and triangular mazes with a choice of algorithms and difficulty, sized in
+              millimetres for print, laser, CAD or a 3D printer.
             </p>
+            <span class="go" aria-hidden="true">→</span>
           </a>
-
-          <a class="tool-card" href="/key-converter/">
-            <span class="tag">Keys · WebCrypto</span>
-            <h3>Private key converter</h3>
-            <p class="muted small">
-              Convert an OpenSSH private key (including passphrase-protected ones) to an unencrypted PKCS#8 or SEC1 PEM.
-              Decryption runs in your browser.
+        </li>
+        <li>
+          <a class="tool-row" href="/datamosh/">
+            <span class="n">02</span>
+            <div>
+              <h2>Datamosher</h2>
+              <span class="tag">Video · WebCodecs</span>
+            </div>
+            <p class="desc">
+              Real datamoshing: keyframes removed and P-frames duplicated in the VP8 bitstream. Mosh a video file or
+              your live webcam and export the result.
             </p>
+            <span class="go" aria-hidden="true">→</span>
           </a>
-
-          <a class="tool-card" href="/datamosh/">
-            <span class="tag">Video · WebCodecs</span>
-            <h3>Datamosher</h3>
-            <p class="muted small">
-              Real datamoshing — keyframes removed and P-frames duplicated at the VP8 bitstream level. Mosh a video
-              file or your live webcam, and export the glitched result.
+        </li>
+        <li>
+          <a class="tool-row" href="/pdf-extractor/">
+            <span class="n">03</span>
+            <div>
+              <h2>PDF asset extractor</h2>
+              <span class="tag">PDF · Rust/WASM</span>
+            </div>
+            <p class="desc">
+              Pull every embedded image and font out of a PDF. Download them one by one or all at once as a ZIP.
             </p>
+            <span class="go" aria-hidden="true">→</span>
           </a>
-
-          <a class="tool-card" href="/maze/">
-            <span class="tag">Mazes · SVG/DXF/STEP/STL</span>
-            <h3>Maze generator</h3>
-            <p class="muted small">
-              Square, round, hexagonal and triangular mazes with a choice of algorithms and difficulty. Export SVG to
-              print or cut, DXF or STEP for CAD, or STL to 3D-print.
+        </li>
+        <li>
+          <a class="tool-row" href="/key-converter/">
+            <span class="n">04</span>
+            <div>
+              <h2>Private key converter</h2>
+              <span class="tag">Keys · WebCrypto</span>
+            </div>
+            <p class="desc">
+              Convert an OpenSSH private key, passphrase-protected or not, to an unencrypted PKCS#8 or SEC1 PEM.
             </p>
+            <span class="go" aria-hidden="true">→</span>
           </a>
-
-          <span class="tool-card" aria-disabled="true">
-            <span class="tag">soon</span>
-            <h3>More to come</h3>
-            <p class="muted small">Other small, browser-only utilities.</p>
+        </li>
+        <li>
+          <span class="tool-row soon" aria-disabled="true">
+            <span class="n">05</span>
+            <div><h2>More to come</h2></div>
+            <p class="desc">Other small, browser-only utilities.</p>
+            <span class="go" aria-hidden="true">…</span>
           </span>
-        </div>
-      </div>
+        </li>
+      </ul>
     </main>
 
-    <footer class="site-footer">
-      <div class="wrap">
-        <span>Runs locally in your browser. Nothing is uploaded.</span>
-        <span><a href="https://enigmeta.com">enigmeta.com</a></span>
-      </div>
+    <footer class="statusbar">
+      <p class="status">4 tools · 0 servers · 0 bytes uploaded</p>
+      <span class="end">
+        <span class="local">everything runs locally</span>
+        <a href="https://enigmeta.com">enigmeta.com</a>
+      </span>
     </footer>
 
     <script type="module" src="/src/home.ts"></script>

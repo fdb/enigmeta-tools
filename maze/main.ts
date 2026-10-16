@@ -19,10 +19,10 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const form = $<HTMLFormElement>("controls");
 const difficulty = $<HTMLInputElement>("difficulty");
 const difficultyOut = $<HTMLOutputElement>("difficulty-out");
-const colsField = $<HTMLLabelElement>("cols-field");
+const colsField = $<HTMLDivElement>("cols-field");
 const cols = $<HTMLInputElement>("cols");
 const rows = $<HTMLInputElement>("rows");
-const rowsLabel = $<HTMLSpanElement>("rows-label");
+const rowsLabel = $<HTMLLabelElement>("rows-label");
 const algorithm = $<HTMLSelectElement>("algorithm");
 const algorithmNote = $<HTMLParagraphElement>("algorithm-note");
 const biasField = $<HTMLDivElement>("bias-field");
@@ -41,7 +41,7 @@ const showSolution = $<HTMLInputElement>("show-solution");
 const heatmap = $<HTMLInputElement>("heatmap");
 const width = $<HTMLInputElement>("width");
 const cell = $<HTMLInputElement>("cell");
-const cellLabel = $<HTMLSpanElement>("cell-label");
+const cellLabel = $<HTMLLabelElement>("cell-label");
 const wall = $<HTMLInputElement>("wall");
 const footprint = $<HTMLParagraphElement>("footprint");
 const height = $<HTMLInputElement>("height");
@@ -213,6 +213,9 @@ function update(regenerate: boolean) {
     wall: num(wall, 1),
   });
   preview.innerHTML = renderSvg(maze, svgOptions(true));
+  // The sheet takes the maze's proportions so it can be fitted to the stage.
+  const vb = preview.querySelector("svg")?.viewBox.baseVal;
+  if (vb && vb.height > 0) preview.style.setProperty("--ar", String(vb.width / vb.height));
 
   const n = grid.centers.length;
   statusEl.dataset.kind = "idle";
@@ -322,9 +325,21 @@ form.addEventListener("input", (e) => {
   update(!displayOnly);
 });
 
-newMaze.addEventListener("click", () => {
+function shuffle() {
   seed.value = randomSeed();
   update(true);
+}
+
+newMaze.addEventListener("click", shuffle);
+
+// N for a new maze, unless you are typing somewhere.
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "n" && e.key !== "N") return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const t = e.target as HTMLElement;
+  if (t.matches("input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea")) return;
+  e.preventDefault();
+  shuffle();
 });
 
 downloadSvg.addEventListener("click", () => {

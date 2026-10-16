@@ -100,7 +100,25 @@ function polygonGrid(kind: GridKind, polys: Point[][]): Grid {
   const walls: Wall[] = [];
   const cellWalls: number[][] = polys.map(() => []);
   const byEdge = new Map<string, number>();
-  const key = (p: Point) => `${Math.round(p.x * 1000)},${Math.round(p.y * 1000)}`;
+  // Neighbouring cells compute a shared corner separately, so the two copies
+  // can differ in the last bits. Snap each corner to the first vertex seen
+  // within EPS, looking in the adjacent buckets too: plain rounding splits a
+  // corner whenever its copies straddle a rounding boundary, which with a
+  // fractional cell size disconnected every hexagon from its neighbours.
+  const EPS = 1e-4;
+  const vertexAt = new Map<string, number>();
+  let vertices = 0;
+  const vertex = (p: Point) => {
+    const bx = Math.round(p.x / EPS);
+    const by = Math.round(p.y / EPS);
+    for (let dx = -1; dx <= 1; dx++)
+      for (let dy = -1; dy <= 1; dy++) {
+        const v = vertexAt.get(`${bx + dx},${by + dy}`);
+        if (v !== undefined) return v;
+      }
+    vertexAt.set(`${bx},${by}`, vertices);
+    return vertices++;
+  };
   let minX = Infinity,
     minY = Infinity,
     maxX = -Infinity,
@@ -114,9 +132,9 @@ function polygonGrid(kind: GridKind, polys: Point[][]): Grid {
       minY = Math.min(minY, p.y);
       maxX = Math.max(maxX, p.x);
       maxY = Math.max(maxY, p.y);
-      const kp = key(p);
-      const kq = key(q);
-      const k = kp < kq ? `${kp}|${kq}` : `${kq}|${kp}`;
+      const vp = vertex(p);
+      const vq = vertex(q);
+      const k = vp < vq ? `${vp}|${vq}` : `${vq}|${vp}`;
       const existing = byEdge.get(k);
       if (existing !== undefined) {
         walls[existing].b = c;

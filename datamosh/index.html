@@ -15,13 +15,13 @@
     <link rel="stylesheet" href="/src/styles/site.css" />
     <link rel="stylesheet" href="/datamosh/style.css" />
   </head>
-  <body>
-    <header class="site-header">
-      <div class="wrap">
-        <a class="brand" href="/">
-          tools<span class="dot">.</span>enigmeta<span class="dot">.</span>com
-          <span class="crumb">/ datamosh</span>
-        </a>
+  <body class="app">
+    <header class="bar">
+      <a class="brand" href="/">
+        tools<span class="dot">.</span>enigmeta<span class="dot">.</span>com<span class="crumb">/datamosh</span>
+      </a>
+      <p class="bar-desc">Bitstream-level datamoshing with WebCodecs: melted cuts, blooming P-frames.</p>
+      <div class="bar-end">
         <button
           class="theme-toggle"
           data-theme-toggle
@@ -29,133 +29,130 @@
           aria-label="Toggle dark mode"
           title="Toggle dark mode"
         >
-          ◐
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5" />
+            <path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor" />
+          </svg>
         </button>
       </div>
     </header>
 
-    <section class="hero">
-      <div class="wrap stack">
-        <h1>Datamosher</h1>
-        <p>
-          <strong>Real</strong> datamoshing, not a pixel-shuffling filter: your video is re-encoded to VP8 with
-          WebCodecs, then the <em>compressed bitstream</em> is broken on purpose — keyframes ripped out so scene cuts
-          melt, P-frames duplicated so motion blooms and smears. Works on a video file or a live webcam.
-        </p>
-        <p class="privacy">
-          Everything runs in your browser. Your video and camera never leave this device — there is no server to send
-          them to.
-        </p>
-      </div>
-    </section>
-
-    <main class="site-main">
-      <div class="wrap stack-lg">
-        <p class="status" id="unsupported" data-kind="error" hidden>
-          Your browser doesn’t support VP8 encoding via WebCodecs, which this tool needs for bitstream-level moshing.
-          Try a Chromium-based browser (Chrome, Edge, Arc, Brave…) or a recent Firefox.
+    <main class="workspace">
+      <div class="panel">
+        <p class="hint unsupported" id="unsupported" hidden>
+          This browser can’t encode VP8 with WebCodecs, which bitstream moshing needs. Try a Chromium-based browser
+          (Chrome, Edge, Arc, Brave) or a recent Firefox.
         </p>
 
-        <div class="tabs" role="tablist" aria-label="Input source">
-          <button class="tab" id="tab-file" role="tab" aria-selected="true" type="button">Video file</button>
-          <button class="tab" id="tab-cam" role="tab" aria-selected="false" type="button">Webcam</button>
-        </div>
+        <section class="section">
+          <h2 class="section-head"><span class="n">01</span> Source</h2>
+          <div class="segmented" role="tablist" aria-label="Input source">
+            <button class="tab" id="tab-file" role="tab" aria-selected="true" type="button">Video file</button>
+            <button class="tab" id="tab-cam" role="tab" aria-selected="false" type="button">Webcam</button>
+          </div>
+          <div class="prop range" title="Lower is crunchier. Applies to the next file or camera start.">
+            <label for="bitrate">Bitrate Mbit/s</label>
+            <input type="range" id="bitrate" min="0.25" max="6" step="0.25" value="1.5" />
+            <output id="bitrate-out" for="bitrate">1.5</output>
+          </div>
+          <p class="hint">Lower is crunchier. Applies to the next file or camera start.</p>
+        </section>
 
         <!-- File mode -->
-        <section class="panel stack-lg" id="panel-file" role="tabpanel">
-          <div class="param">
-            <label for="bitrate">
-              Bitrate <output class="mono" id="bitrate-out">1.5</output> Mbit/s
-              <span class="muted small">— lower is crunchier; applies to the next file or camera start</span>
+        <div class="tabpanel" id="panel-file" role="tabpanel">
+          <section class="section">
+            <h2 class="section-head"><span class="n">02</span> Video</h2>
+            <label class="dropzone" id="dropzone">
+              <span class="glyph" aria-hidden="true">↓</span>
+              <strong>Drop a video here</strong>
+              <span>or click to choose. Hard cuts and motion mosh best.</span>
+              <input type="file" id="file" accept="video/*" class="visually-hidden" />
             </label>
-            <input type="range" id="bitrate" min="0.25" max="6" step="0.25" value="1.5" />
-          </div>
+            <div class="progress" id="progress" role="progressbar" hidden>
+              <div class="progress-bar" id="progress-bar"></div>
+            </div>
+          </section>
 
-          <label class="dropzone" id="dropzone">
-            <strong>Drop a video here</strong>
-            <span>or click to choose a file — best results with clips that have hard cuts and motion</span>
-            <input type="file" id="file" accept="video/*" class="visually-hidden" />
-          </label>
-
-          <div class="progress" id="progress" role="progressbar" hidden>
-            <div class="progress-bar" id="progress-bar"></div>
-          </div>
-
-          <fieldset class="params" id="file-controls" hidden>
-            <legend>Mosh parameters <span class="muted small">— re-applied to the bitstream live, no re-encode</span></legend>
-
-            <label class="check">
+          <fieldset class="section" id="file-controls" hidden>
+            <legend class="section-head">
+              <span class="n">03</span> Mosh <span class="aside">live, no re-encode</span>
+            </legend>
+            <label class="check" title="Remove every keyframe after the first, so each scene bleeds into the next">
               <input type="checkbox" id="melt" checked />
-              <span><strong>Melt cuts</strong> — remove every keyframe after the first, so each scene bleeds into the next</span>
+              <span><strong>Melt cuts</strong> (drop keyframes after the first)</span>
             </label>
-
-            <div class="param">
-              <label for="bloom-every">Bloom every <output class="mono" id="bloom-every-out">45</output> frames
-                <span class="muted small">(0 = off)</span></label>
+            <div class="prop range" title="Frames between blooms; 0 turns blooming off">
+              <label for="bloom-every">Bloom every</label>
               <input type="range" id="bloom-every" min="0" max="150" step="5" value="45" />
+              <output id="bloom-every-out" for="bloom-every">45</output>
             </div>
-
-            <div class="param">
-              <label for="bloom-repeats">Bloom strength <output class="mono" id="bloom-repeats-out">25</output> repeats</label>
+            <div class="prop range" title="How many times the bloom frame is repeated">
+              <label for="bloom-repeats">Bloom repeats</label>
               <input type="range" id="bloom-repeats" min="5" max="60" step="5" value="25" />
+              <output id="bloom-repeats-out" for="bloom-repeats">25</output>
             </div>
-
-            <div class="param">
-              <label for="drop">Frame drop <output class="mono" id="drop-out">0</output>%</label>
+            <div class="prop range">
+              <label for="drop">Frame drop %</label>
               <input type="range" id="drop" min="0" max="50" step="2" value="0" />
+              <output id="drop-out" for="drop">0</output>
             </div>
-
-            <div class="actions">
-              <button class="btn btn-primary" id="export-raw" type="button">Download moshed .webm</button>
+            <div class="btn-row">
+              <button class="btn btn-primary" id="export-raw" type="button">↓ Moshed .webm</button>
               <button class="btn" id="export-baked" type="button">Bake &amp; download</button>
             </div>
-            <p class="muted small export-note">
-              <strong>Moshed .webm</strong> is the corrupted bitstream itself — it glitches (differently!) in every
-              player. <strong>Bake</strong> replays the mosh once and records the canvas, freezing exactly what you see
-              here into a clean file.
-            </p>
+            <details class="help">
+              <summary>Moshed or baked?</summary>
+              <p>
+                <strong>Moshed .webm</strong> is the corrupted bitstream itself; it glitches (differently!) in every
+                player. <strong>Bake</strong> replays the mosh once and records the canvas, freezing exactly what you
+                see here into a clean file.
+              </p>
+            </details>
           </fieldset>
-        </section>
+        </div>
 
         <!-- Webcam mode -->
-        <section class="panel stack-lg" id="panel-cam" role="tabpanel" hidden>
-          <div class="actions">
-            <button class="btn btn-primary" id="cam-start" type="button">Start camera</button>
-          </div>
-          <div class="cam-controls" id="cam-controls" hidden>
-            <button class="btn hold-btn" id="cam-bloom" type="button" aria-pressed="false">
-              Bloom <span class="muted small">(hold)</span>
-            </button>
-            <button class="btn hold-btn" id="cam-drop" type="button" aria-pressed="false">
-              Drop <span class="muted small">(hold)</span>
-            </button>
-            <button class="btn" id="cam-resync" type="button">Resync picture</button>
-            <button class="btn" id="cam-record" type="button" aria-pressed="false">● Record</button>
-          </div>
-          <p class="muted small">
-            After one initial keyframe the encoder is never allowed another, so the picture accumulates drift and smear
-            on its own. <strong>Hold Bloom</strong> to re-apply the last P-frame’s motion over and over;
-            <strong>hold Drop</strong> to discard frames so reality jumps when you release;
-            <strong>Resync</strong> lets a single keyframe through to snap back to clean video.
-          </p>
-        </section>
-
-        <p class="status" id="status" data-kind="idle" role="status" aria-live="polite">
-          Drop a video or start the webcam.
-        </p>
-
-        <div class="viewport" id="viewport" data-empty="true">
-          <canvas id="canvas" width="16" height="9"></canvas>
-          <p class="viewport-hint" id="viewport-hint">The moshed output appears here.</p>
+        <div class="tabpanel" id="panel-cam" role="tabpanel" hidden>
+          <section class="section">
+            <h2 class="section-head"><span class="n">02</span> Camera</h2>
+            <div class="btn-row">
+              <button class="btn btn-primary" id="cam-start" type="button">Start camera</button>
+            </div>
+            <div class="btn-row cam-controls" id="cam-controls" hidden>
+              <button class="btn hold-btn" id="cam-bloom" type="button" aria-pressed="false">Bloom (hold)</button>
+              <button class="btn hold-btn" id="cam-drop" type="button" aria-pressed="false">Drop (hold)</button>
+              <button class="btn" id="cam-resync" type="button">Resync</button>
+              <button class="btn" id="cam-record" type="button" aria-pressed="false">● Record</button>
+            </div>
+            <details class="help">
+              <summary>How live moshing works</summary>
+              <p>
+                After one initial keyframe the encoder is never allowed another, so the picture accumulates drift and
+                smear on its own. <strong>Hold Bloom</strong> to re-apply the last P-frame’s motion over and over;
+                <strong>hold Drop</strong> to discard frames so reality jumps when you release;
+                <strong>Resync</strong> lets a single keyframe through to snap back to clean video.
+              </p>
+            </details>
+          </section>
         </div>
       </div>
+
+      <section class="stage mosh-stage" aria-label="Output">
+        <div class="viewport" id="viewport" data-empty="true">
+          <canvas id="canvas" width="16" height="9"></canvas>
+          <p class="empty-hint viewport-hint" id="viewport-hint">The moshed output appears here.</p>
+        </div>
+      </section>
     </main>
 
-    <footer class="site-footer">
-      <div class="wrap">
-        <span>All processing happens in your browser. Nothing is uploaded.</span>
-        <span><a href="/">← all tools</a></span>
-      </div>
+    <footer class="statusbar">
+      <p class="status" id="status" data-kind="idle" role="status" aria-live="polite">
+        Drop a video or start the webcam.
+      </p>
+      <span class="end">
+        <span class="local">encoded here, nothing uploaded</span>
+        <a href="/">all tools</a>
+      </span>
     </footer>
 
     <script type="module" src="/datamosh/main.ts"></script>
