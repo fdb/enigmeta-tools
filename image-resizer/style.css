@@ -1,0 +1,212 @@
+/* Image resizer: size fields, mask brush and a stage that fits or shows 1:1. */
+
+.dims {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) 4.25rem;
+  align-items: end;
+  gap: var(--s-2);
+}
+.dim {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--step--2);
+  color: var(--muted);
+}
+.dim input[aria-invalid="true"],
+#factor[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+.lock {
+  color: var(--muted);
+}
+.lock[aria-pressed="true"] {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.lock[aria-pressed="false"] .lock-link {
+  opacity: 0;
+}
+
+#ppi-row.emph label {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* The pixel size is the number people come for; make it the loudest thing. */
+.px-readout {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: var(--s-2);
+  max-width: none;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--muted);
+}
+.px-readout:empty {
+  display: none;
+}
+.px-readout strong {
+  font-size: var(--step-0);
+  font-weight: 600;
+  color: var(--heading);
+  letter-spacing: -0.01em;
+}
+.px-readout[data-error="true"] strong {
+  color: var(--danger);
+}
+
+.presets {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--s-1);
+}
+.presets .btn {
+  padding: 0;
+  font-family: var(--font-mono);
+}
+.presets .btn[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.panel code {
+  font-family: var(--font-mono);
+  color: var(--text);
+}
+
+#pixel-opts,
+#carve-opts,
+.adv-body,
+.carve-adv {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.panel .segmented label span {
+  padding: 0 0.15em;
+}
+
+/* A fieldset section that is waiting for an image. */
+.section:disabled {
+  opacity: 0.45;
+}
+
+/* Stage. */
+.resize-stage {
+  container-type: size;
+}
+@media (max-width: 51.99rem) {
+  .resize-stage {
+    min-height: 0;
+    height: min(90vw, 70dvh);
+  }
+}
+.stage-tools {
+  position: absolute;
+  top: var(--s-2);
+  right: var(--s-2);
+  z-index: 2;
+  display: flex;
+  gap: var(--s-2);
+}
+.stage-tools[hidden],
+#view-seams[hidden] {
+  display: none;
+}
+.stage-tools .segmented label span {
+  padding: 0 0.7em;
+}
+.resize-stage .readout {
+  top: auto;
+  bottom: var(--s-2);
+}
+
+.viewport {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: calc(var(--control-h) + var(--s-4)) var(--s-4) calc(var(--control-h) + var(--s-3));
+  overflow: auto;
+}
+.frame {
+  position: relative;
+  aspect-ratio: var(--ar, 1);
+  /* Fit inside the stage, never upscaled past 1:1 unless the image is tiny. */
+  width: min(100cqw - 2 * var(--s-4), (100cqh - 2 * var(--control-h) - 3.5 * var(--s-3)) * var(--ar, 1));
+  background: repeating-conic-gradient(var(--surface-2) 0 25%, var(--bg) 0 50%) 0 0 / 16px 16px;
+  box-shadow: 0 0 0 1px var(--border);
+}
+.viewport[data-zoom="1"] {
+  place-items: safe center;
+}
+.viewport[data-zoom="1"] .frame {
+  width: var(--w);
+  height: var(--h);
+}
+.frame canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.frame canvas.crisp {
+  image-rendering: pixelated;
+}
+#mask {
+  opacity: 0.5;
+  image-rendering: auto;
+}
+#mask[hidden] {
+  display: none;
+}
+.frame:not([data-brush="none"]):has(#mask:not([hidden])) {
+  cursor: none;
+  touch-action: none;
+}
+.brush-cursor {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  border: 1px solid #fff;
+  outline: 1px solid #000;
+  border-radius: 50%; /* the one circle on the site: it is a brush */
+  transform: translate(-50%, -50%);
+}
+.brush-cursor[hidden] {
+  display: none;
+}
+.viewport[data-empty="true"] .frame {
+  display: none;
+}
+.viewport-hint {
+  position: absolute;
+  pointer-events: none;
+}
+.viewport[data-empty="false"] .viewport-hint {
+  display: none;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stack-label {
+  font-size: var(--step--2);
+  color: var(--text);
+}
+
+.stage-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+}
