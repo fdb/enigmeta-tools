@@ -17,6 +17,7 @@ export default defineConfig({
         "key-converter": resolve(root, "key-converter/index.html"),
         datamosh: resolve(root, "datamosh/index.html"),
         maze: resolve(root, "maze/index.html"),
+        "image-resizer": resolve(root, "image-resizer/index.html"),
       },
     },
   },

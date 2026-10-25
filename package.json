@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "wasm": "wasm-pack build crates/pdf-extract --target web --out-dir ../../src/wasm/pdf-extract --out-name pdf_extract --release --no-pack",
+    "wasm": "npm run wasm:pdf && npm run wasm:resize",
+    "wasm:pdf": "wasm-pack build crates/pdf-extract --target web --out-dir ../../src/wasm/pdf-extract --out-name pdf_extract --release --no-pack",
+    "wasm:resize": "wasm-pack build crates/image-resize --target web --out-dir ../../src/wasm/image-resize --out-name image_resize --release --no-pack",
     "dev": "npm run wasm && vite",
     "build": "npm run wasm && tsc --noEmit && vite build",
     "preview": "vite preview",
